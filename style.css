@@ -465,35 +465,6 @@ body {
   background-color: #256428;
 }
 
-/* 画面下部の固定ナビゲーションバー */
-#app-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  background-color: #ffffff;
-  border-top: 1px solid #dddddd;
-  padding: 6px 0;
-}
-
-#app-nav .nav-button {
-  flex: 1;
-  background: none;
-  border: none;
-  font-size: 11px;
-  line-height: 1.6;
-  padding: 6px 0;
-  cursor: pointer;
-  color: #777777;
-}
-
-/* 今、表示している画面に対応するボタンだけ強調する */
-#app-nav .nav-button-active {
-  color: #2E7D32;
-  font-weight: bold;
-}
-
 /* ☰や🏠など、アイコンだけのシンプルなボタン共通スタイル */
 .icon-button {
   background: none;
