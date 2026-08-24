@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ease Money</title>
+
+  <!-- 見た目（色・配置など）はstyle.cssに書く -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1 id="app-title">Ease Money</h1>
+
+  <!-- ここの文字は script.js が正しく動いていれば書き換わる -->
+  <p id="status-message">読み込み中...</p>
+
+  <!-- ☰アイコン：タップすると横からメニューが出てくる -->
+  <button id="open-menu-button" class="icon-button ">☰</button>
+
+
+  <!-- ☰を押すと表示される簡易メニュー。普段は隠しておく -->
+  <div id="side-menu" style="display:none;">
+    <button data-screen="history">履歴</button>
+    <button data-screen="recurring">定期支出の管理</button>
+    <button data-screen="balance-adjustment">残高の修正</button>
+    <button data-screen="settings">設定</button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 🏠 ホーム画面 -->
+  <!-- 「.app-screen」を持つ要素は、script.jsのshowScreen()関数で -->
+  <!-- 表示/非表示が切り替えられる。今どの画面が見えているかは -->
+  <!-- data-screen属性の値（home / expense / income / recurring / history / settings）で管理する。 -->
+  <!-- ============================================================ -->
+   <div id="screen-home" class="app-screen">
+
+    <!-- ここから「今週使える目安（今週の利用状況）」を表示するエリア -->
+    <section id="weekly-summary-section">
+      <h2>今週使える目安</h2>
+
+      <!-- 残高・次回収入日が未登録の場合の案内文はここに表示する -->
+      <p id="weekly-summary-message"></p>
+
+      <!-- 計算に必要な情報が揃っているときだけ、このかたまりを表示する -->
+      <div id="weekly-summary-details">
+        <p id="weekly-budget-line"><span id="weekly-budget-display">-</span></p>
+
+        <p>
+          今週使った金額：<span id="weekly-spent-display">-</span>
+          残り：<span id="weekly-remaining-display">-</span>
+        </p>
+
+        <!-- 現在の残高（表示のみ。登録・修正は「設定」「残高修正」画面で行う） -->
+        <p id="home-balance-line">現在残高：<span id="home-balance-display">未登録</span></p>
+
+        <p>次回収入日までの日数：<span id="days-until-income-display">-</span></p>
+      </div>
+    </section>
+
+    <!-- 各機能への入口（収入・支出のみ。定期支出・履歴はメニューへ移動） -->
+    <div id="home-shortcut-buttons">
+      <button class="home-shortcut-button" data-screen="income">収入の登録</button>
+      <button class="home-shortcut-button" data-screen="expense">支出の登録</button>
+    </div>
+
+  </div>
+
+  <!--===================================================== -->
+  <!-- 🍚 支出画面 -->
+  <!--==================================================== -->
+  <div id="screen-expense" class="app-screen">
+
+    <button data-screen="home" class="icon-button home-icon-button">🏠</button>
+
+    <!-- ここから「支出を登録する」ためのエリア -->
+    <section id="expense-section">
+      <h2>支出登録</h2>
+
+      <div>
+        <label for="expense-date-input">日付：</label>
+        <input type="date" id="expense-date-input">
+      </div>
+
+      <div>
+        <label for="expense-amount-input">金額：</label>
+        <input type="number" id="expense-amount-input" placeholder="金額を入力">
+      </div>
+
+      <div>
+        <label for="expense-category-main">カテゴリ：</label>
+        <!-- 選択肢はscript.jsで自動的に追加される -->
+        <select id="expense-category-main"></select>
+        <select id="expense-category-sub"></select>
+      </div>
+
+      <div>
+        <label for="expense-memo-input">メモ（任意）：</label>
+        <input type="text" id="expense-memo-input" placeholder="メモ">
+      </div>
+
+      <button id="save-expense-button">支出を登録</button>
+      <button id="cancel-edit-button" style="display:none;">キャンセル</button>
+    </section>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 💰 収入画面 -->
+  <!-- ============================================================ -->
+  <div id="screen-income" class="app-screen">
+
+    <button data-screen="home" class="icon-button home-icon-button">🏠</button>
+
+    <!-- ここから「収入を登録する」ためのエリア -->
+    <section id="income-entry-section">
+      <h2>収入登録</h2>
+
+      <div>
+        <label for="income-entry-date-input">日付：</label>
+        <input type="date" id="income-entry-date-input">
+      </div>
+
+      <div>
+        <label for="income-entry-amount-input">金額：</label>
+        <input type="number" id="income-entry-amount-input" placeholder="金額を入力">
+      </div>
+
+      <div>
+        <label for="income-entry-type-select">種類：</label>
+        <select id="income-entry-type-select">
+          <option value="">選択してください</option>
+          <option value="給与">給与</option>
+          <option value="年金">年金</option>
+          <option value="手当">手当</option>
+          <option value="返金">返金</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="income-entry-memo-input">メモ（任意）：</label>
+        <input type="text" id="income-entry-memo-input" placeholder="メモ">
+      </div>
+
+      <button id="save-income-entry-button">収入を登録</button>
+      <button id="cancel-income-edit-button" style="display:none;">キャンセル</button>
+    </section>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 🔁 定期支出画面 -->
+  <!-- ============================================================ -->
+  <div id="screen-recurring" class="app-screen">
+
+    <button data-screen="home" class="icon-button home-icon-button">🏠</button>
+
+    <!-- ここから「定期支出を登録する」ためのエリア -->
+    <section id="recurring-section">
+      <h2>定期支出</h2>
+
+      <div>
+        <label for="recurring-name-input">名称：</label>
+        <input type="text" id="recurring-name-input" placeholder="例：家賃">
+      </div>
+
+      <div>
+        <label for="recurring-amount-input">金額：</label>
+        <input type="number" id="recurring-amount-input" placeholder="金額を入力">
+      </div>
+
+      <div>
+        <label for="recurring-day-input">引き落とし日：</label>
+        <input type="number" id="recurring-day-input" min="1" max="31" placeholder="1〜31">
+      </div>
+
+      <div>
+        <label for="recurring-category">カテゴリ：</label>
+        <!-- 定期支出専用の固定選択肢。支出登録の8カテゴリとは別物 -->
+        <select id="recurring-category">
+          <option value="">選択してください</option>
+          <option value="家賃">家賃</option>
+          <option value="サブスク">サブスク</option>
+        </select>
+      </div>
+
+      <button id="save-recurring-button">定期支出を登録</button>
+
+      <h3>登録済みの定期支出</h3>
+      <ul id="recurring-list"></ul>
+    </section>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 📅 履歴画面 -->
+  <!-- ============================================================ -->
+  <div id="screen-history" class="app-screen">
+
+    <button data-screen="home" class="icon-button home-icon-button">🏠</button>
+
+    <!-- ここから「履歴（カレンダー表示）」のエリア -->
+    <section id="history-section">
+      <h2>履歴</h2>
+
+      <!-- 月を切り替えるためのヘッダー -->
+      <div id="calendar-header">
+        <button id="prev-month-button">＜</button>
+        <span id="calendar-month-label"></span>
+        <button id="next-month-button">＞</button>
+      </div>
+
+      <!-- カレンダー本体はscript.jsで組み立てる -->
+      <div id="calendar-grid"></div>
+
+      <!-- 今月の支出・収入の合計 -->
+      <div id="month-summary">
+        <p>今月の支出合計：<span id="month-total-display">-</span></p>
+        <p>今月の収入合計：<span id="month-income-total-display">-</span></p>
+      </div>
+
+      <!-- 日付をタップすると、その日の支出・収入の詳細がここに表示される -->
+      <div id="day-detail-section" style="display:none;">
+        <h3 id="day-detail-title"></h3>
+        <h4>支出</h4>
+        <ul id="day-detail-expense-list"></ul>
+        <h4>収入</h4>
+        <ul id="day-detail-income-list"></ul>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ☰ 設定画面（残高登録・残高修正・次回収入日登録） -->
+  <!-- 使用頻度が低い「初期設定・修正系」の項目をまとめている -->
+  <!-- ============================================================ -->
+  <div id="screen-settings" class="app-screen">
+
+    <button data-screen="home" class="icon-button home-icon-button">🏠</button>
+
+    <!-- ここから「初期残高を登録する」ためのエリア -->
+    <section id="balance-section">
+      <h2>残高登録</h2>
+
+      <!-- 現在保存されている残高を表示する場所 -->
+      <p>現在の残高：<span id="balance-display">未登録</span></p>
+
+      <!-- 金額を入力する欄 -->
+      <input type="number" id="balance-input" placeholder="金額を入力">
+
+      <!-- 保存ボタン。押すとscript.js内の処理が動く -->
+      <button id="save-balance-button">保存</button>
+
+    </section>
+
+    <hr>
+
+    <!-- ここから「次回収入日を登録する」ためのエリア -->
+    <section id="income-date-section">
+      <h2>次回収入日登録</h2>
+
+      <!-- 現在保存されている次回収入日を表示する場所 -->
+      <p>次回収入日：<span id="income-date-display">未登録</span></p>
+
+      <!-- 日付を選ぶ欄（ブラウザ標準のカレンダーが使える） -->
+      <input type="date" id="income-date-input">
+
+      <!-- 保存ボタン -->
+      <button id="save-income-date-button">保存</button>
+    </section>
+
+    <hr>
+
+    <!-- ここから「データのバックアップ」のエリア -->
+    <!-- 機種変更やSafariのデータ消去に備えて、データをファイルとして書き出せるようにする -->
+    <section id="backup-section">
+      <h2>データのバックアップ</h2>
+      <p>今のデータをファイルとして保存できます。機種変更のときなどに使ってください。</p>
+
+      <button id="export-backup-button">バックアップを書き出す</button>
+
+      <hr>
+
+      <!-- ファイル選択欄自体は画面に見せず、ボタンから間接的に開く -->
+      <input type="file" id="import-backup-input" accept=".json" style="display:none;">
+      <button id="import-backup-button">バックアップを読み込む</button>
+    </section>
+
+  </div>
+
+    <!-- ============================================================ -->
+  <!-- 💴 残高修正画面（設定画面から独立させた） -->
+  <!-- ============================================================ -->
+  <div id="screen-balance-adjustment" class="app-screen">
+
+    <button data-screen="home" class="icon-button home-icon-button">🏠</button>
+
+    <section id="balance-adjustment-area">
+      <h2>残高を修正</h2>
+      <p>実際の残高とズレているときに、正しい金額に直せます。</p>
+
+      <input type="number" id="balance-adjustment-input" placeholder="実際の残高を入力">
+      <button id="save-balance-adjustment-button">残高を修正</button>
+
+      <h4>修正履歴</h4>
+      <ul id="balance-adjustment-list"></ul>
+    </section>
+
+  </div>
+
+  <!-- 動作（JavaScript）はscript.jsに書く。bodyの一番下に置くのが基本 -->
+  <script src="script.js"></script>
+</body>
+</html>
