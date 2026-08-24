@@ -444,21 +444,14 @@ body {
   max-width: 400px;
   margin: 20px auto 0;
   display: flex;
-<<<<<<< HEAD
-=======
-  flex-direction: column;
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
   gap: 10px;
 }
 
 .home-shortcut-button {
-<<<<<<< HEAD
   flex: 1;
 }
 
 .home-shortcut-button {
-=======
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
   font-size: 16px;
   padding: 14px;
   border: none;
@@ -499,7 +492,6 @@ body {
 #app-nav .nav-button-active {
   color: #2E7D32;
   font-weight: bold;
-<<<<<<< HEAD
 }
 
 /* ☰や🏠など、アイコンだけのシンプルなボタン共通スタイル */
@@ -586,6 +578,4 @@ select {
   position: fixed;
   top: 10px;
   right: 10px;
-=======
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
 }
