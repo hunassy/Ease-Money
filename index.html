@@ -15,7 +15,6 @@
   <!-- ここの文字は script.js が正しく動いていれば書き換わる -->
   <p id="status-message">読み込み中...</p>
 
-<<<<<<< HEAD
   <!-- ☰アイコン：タップすると横からメニューが出てくる -->
   <button id="open-menu-button" class="icon-button ">☰</button>
 
@@ -28,35 +27,23 @@
     <button data-screen="settings">設定</button>
   </div>
 
-=======
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
   <!-- ============================================================ -->
   <!-- 🏠 ホーム画面 -->
   <!-- 「.app-screen」を持つ要素は、script.jsのshowScreen()関数で -->
   <!-- 表示/非表示が切り替えられる。今どの画面が見えているかは -->
   <!-- data-screen属性の値（home / expense / income / recurring / history / settings）で管理する。 -->
   <!-- ============================================================ -->
-<<<<<<< HEAD
    <div id="screen-home" class="app-screen">
 
     <!-- ここから「今週使える目安（今週の利用状況）」を表示するエリア -->
     <section id="weekly-summary-section">
       <h2>今週使える目安</h2>
-=======
-  <div id="screen-home" class="app-screen">
-
-    <!-- ここから「今日使える目安（今週の利用状況）」を表示するエリア -->
-    <!-- 設計書の指定で、ホーム画面の一番上に大きく表示する -->
-    <section id="weekly-summary-section">
-      <h2>今週の利用状況</h2>
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
 
       <!-- 残高・次回収入日が未登録の場合の案内文はここに表示する -->
       <p id="weekly-summary-message"></p>
 
       <!-- 計算に必要な情報が揃っているときだけ、このかたまりを表示する -->
       <div id="weekly-summary-details">
-<<<<<<< HEAD
         <p id="weekly-budget-line"><span id="weekly-budget-display">-</span></p>
 
         <p>
@@ -75,29 +62,10 @@
     <div id="home-shortcut-buttons">
       <button class="home-shortcut-button" data-screen="income">収入の登録</button>
       <button class="home-shortcut-button" data-screen="expense">支出の登録</button>
-=======
-        <p>今週使える目安：<span id="weekly-budget-display">-</span></p>
-        <p>今週使った金額：<span id="weekly-spent-display">-</span></p>
-        <p>残り：<span id="weekly-remaining-display">-</span></p>
-        <p>次の収入まで：<span id="days-until-income-display">-</span></p>
-      </div>
-    </section>
-
-    <!-- 現在の残高（表示のみ。登録・修正は「設定」画面で行う） -->
-    <p id="home-balance-line">現在の残高：<span id="home-balance-display">未登録</span></p>
-
-    <!-- 各機能への入口（設計書：支出・収入・履歴・定期支出への入口） -->
-    <div id="home-shortcut-buttons">
-      <button class="home-shortcut-button" data-screen="expense">＋ 支出を登録</button>
-      <button class="home-shortcut-button" data-screen="income">＋ 収入を登録</button>
-      <button class="home-shortcut-button" data-screen="recurring">⚙ 定期支出を管理</button>
-      <button class="home-shortcut-button" data-screen="history">📅 履歴を見る</button>
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
     </div>
 
   </div>
 
-<<<<<<< HEAD
   <!--===================================================== -->
   <!-- 🍚 支出画面 -->
   <!--==================================================== -->
@@ -105,13 +73,6 @@
 
     <button data-screen="home" class="icon-button home-icon-button">🏠</button>
 
-=======
-  <!-- ============================================================ -->
-  <!-- 🍚 支出画面 -->
-  <!-- ============================================================ -->
-  <div id="screen-expense" class="app-screen">
-
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
     <!-- ここから「支出を登録する」ためのエリア -->
     <section id="expense-section">
       <h2>支出登録</h2>
@@ -149,11 +110,8 @@
   <!-- ============================================================ -->
   <div id="screen-income" class="app-screen">
 
-<<<<<<< HEAD
     <button data-screen="home" class="icon-button home-icon-button">🏠</button>
 
-=======
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
     <!-- ここから「収入を登録する」ためのエリア -->
     <section id="income-entry-section">
       <h2>収入登録</h2>
@@ -196,11 +154,8 @@
   <!-- ============================================================ -->
   <div id="screen-recurring" class="app-screen">
 
-<<<<<<< HEAD
     <button data-screen="home" class="icon-button home-icon-button">🏠</button>
 
-=======
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
     <!-- ここから「定期支出を登録する」ためのエリア -->
     <section id="recurring-section">
       <h2>定期支出</h2>
@@ -278,20 +233,13 @@
   </div>
 
   <!-- ============================================================ -->
-<<<<<<< HEAD
   <!-- ☰ 設定画面（残高登録・残高修正・次回収入日登録） -->
-=======
-  <!-- ⚙ 設定画面（残高登録・残高修正・次回収入日登録） -->
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
   <!-- 使用頻度が低い「初期設定・修正系」の項目をまとめている -->
   <!-- ============================================================ -->
   <div id="screen-settings" class="app-screen">
 
-<<<<<<< HEAD
     <button data-screen="home" class="icon-button home-icon-button">🏠</button>
 
-=======
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
     <!-- ここから「初期残高を登録する」ためのエリア -->
     <section id="balance-section">
       <h2>残高登録</h2>
@@ -305,21 +253,6 @@
       <!-- 保存ボタン。押すとscript.js内の処理が動く -->
       <button id="save-balance-button">保存</button>
 
-<<<<<<< HEAD
-=======
-      <!-- ここから「残高を修正する」ための小さなエリア -->
-      <!-- 初期残高の登録とは別物。実際の残高とアプリ上の残高がズレたときに使う -->
-      <div id="balance-adjustment-area">
-        <h3>残高を修正</h3>
-        <p>実際の残高とズレているときに、正しい金額に直せます。</p>
-
-        <input type="number" id="balance-adjustment-input" placeholder="実際の残高を入力">
-        <button id="save-balance-adjustment-button">残高を修正</button>
-
-        <h4>修正履歴</h4>
-        <ul id="balance-adjustment-list"></ul>
-      </div>
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
     </section>
 
     <hr>
@@ -338,7 +271,6 @@
       <button id="save-income-date-button">保存</button>
     </section>
 
-<<<<<<< HEAD
     <hr>
 
     <!-- ここから「データのバックアップ」のエリア -->
@@ -377,21 +309,6 @@
     </section>
 
   </div>
-=======
-  </div>
-
-  <!-- ============================================================ -->
-  <!-- 画面下部の固定ナビゲーションバー（どの画面からでもタップで移動できる） -->
-  <!-- ============================================================ -->
-  <nav id="app-nav">
-    <button class="nav-button" data-screen="home">🏠<br>ホーム</button>
-    <button class="nav-button" data-screen="expense">🍚<br>支出</button>
-    <button class="nav-button" data-screen="income">💰<br>収入</button>
-    <button class="nav-button" data-screen="recurring">🔁<br>定期</button>
-    <button class="nav-button" data-screen="history">📅<br>履歴</button>
-    <button class="nav-button" data-screen="settings">⚙<br>設定</button>
-  </nav>
->>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
 
   <!-- 動作（JavaScript）はscript.jsに書く。bodyの一番下に置くのが基本 -->
   <script src="script.js"></script>
