@@ -28,9 +28,12 @@ function showScreen(screenName) {
   // 指定された画面だけを表示する
   document.getElementById("screen-" + screenName).style.display = "block";
 
+<<<<<<< HEAD
   // 画面を切り替えたら、開いていたメニューがあれば自動で閉じる
   document.getElementById("side-menu").style.display = "none";
 
+=======
+>>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
   // 下部ナビゲーションバーのボタンも、今の画面に合わせて強調表示を切り替える
   document.querySelectorAll("#app-nav .nav-button").forEach(function (button) {
     if (button.dataset.screen === screenName) {
@@ -132,6 +135,7 @@ function saveData(data) {
   localStorage.setItem(STORAGE_KEY, dataText);
 }
 
+<<<<<<< HEAD
 // 今のデータをJSONファイルとして書き出す関数
 // 「バックアップを書き出す」ボタンが押されたときに呼ばれる
 function exportBackupData() {
@@ -211,6 +215,8 @@ function importBackupData(file) {
 
   reader.readAsText(file);
 }
+=======
+>>>>>>> e0f7d66d1b1bdf31d6e2409889ae20f822fb48ba
 
 // 画面上の「現在の残高」表示を更新する関数
 // 「設定」画面と「ホーム」画面の2箇所に同じ残高を表示しているので、両方まとめて更新する
