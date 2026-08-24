@@ -31,6 +31,14 @@ function showScreen(screenName) {
   // 画面を切り替えたら、開いていたメニューがあれば自動で閉じる
   document.getElementById("side-menu").style.display = "none";
 
+  // 🏠アイコンは、ホーム画面のときだけ隠す（他の画面では表示する）
+  const homeIconButton = document.getElementById("home-icon-button");
+  if (screenName === "home") {
+    homeIconButton.style.display = "none";
+  } else {
+    homeIconButton.style.display = "inline-block";
+  }
+
   // 下部ナビゲーションバーのボタンも、今の画面に合わせて強調表示を切り替える
   document.querySelectorAll("#app-nav .nav-button").forEach(function (button) {
     if (button.dataset.screen === screenName) {

@@ -3,7 +3,7 @@ body {
   font-family: sans-serif;
   background-color: #f5f5f5;
   text-align: center;
-  padding-top: 20px;
+  padding-top: 60px;/* ヘッダー分、本文が隠れないように上に余白を作る */
 }
 
 /* タイトル文字 */
@@ -561,21 +561,21 @@ select {
   margin-bottom: 4px;
 }
 
-/* 各画面の本文が、固定表示のアイコンと重ならないよう、上に余白を作る */
-.app-screen {
-  padding-top: 45px;
+/* ヘッダー：☰・タイトル・🏠を横並びで、画面の一番上に固定表示 */
+#app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f5f5f5;
+  padding: 10px 15px;
+  z-index: 10;
 }
 
-/* ☰（ホーム画面のメニューボタン）：画面の一番上・左に固定表示 */
-#open-menu-button {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-}
-
-/* 🏠（他の画面のホームに戻るボタン）：画面の一番上・右に固定表示 */
-.home-icon-button {
-  position: fixed;
-  top: 10px;
-  right: 10px;
+/* ヘッダーの中のタイトルは、余白なしで中央に収まるようにする */
+#app-header #app-title {
+  margin: 0;
 }
