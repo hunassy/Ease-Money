@@ -884,6 +884,9 @@ function updateWeeklySummaryDisplay(data) {
     if (expense.isRecurringGenerated) {
       return; // 定期支出由来の支出はスキップする
     }
+    if (expense.categoryMain === "💡 光熱費") {
+      return; // 光熱費は金額が大きく不定期なので、週予算には含めず残高から直接引くだけにする
+    }
     const expenseDate = parseDateString(expense.date);
     if (expenseDate >= startOfWeek && expenseDate <= endOfWeek) {
       weeklySpent += expense.amount;
