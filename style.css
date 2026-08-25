@@ -412,6 +412,22 @@ body {
   color: #d9534f;
 }
 
+.recurring-edit-button {
+  font-size: 12px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+#cancel-recurring-edit-button {
+  font-size: 16px;
+  padding: 5px 15px;
+  cursor: pointer;
+  margin-top: 5px;
+  margin-left: 5px;
+  background-color: #cccccc;
+}
+
+
 /* ============================================================ */
 /* 画面切り替え（ホーム・支出・収入・定期・履歴・設定）関連 */
 /* ============================================================ */

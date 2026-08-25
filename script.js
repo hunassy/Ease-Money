@@ -882,10 +882,57 @@ function updateWeeklySummaryDisplay(data) {
   document.getElementById("days-until-income-display").textContent = "あと" + daysUntilIncome + "日";
 }
 
-
 // ============================================================
 // 【定期支出関連】
 // ============================================================
+
+// 現在編集中の定期支出のID番号。編集していないときは null
+let editingRecurringId = null;
+
+
+// 指定した定期支出のデータを、定期支出フォームに読み込んで「編集モード」にする関数
+function startEditingRecurringExpense(recurringId) {
+  const data = loadData();
+  const recurring = data.recurringExpenses.find(function (r) {
+    return r.id === recurringId;
+  });
+
+  // 万が一データが見つからなかった場合は、何もせず終了する
+  if (recurring === undefined) {
+    return;
+  }
+
+  editingRecurringId = recurringId;
+
+  // 先に画面を切り替えてから、フォームに値をセットする
+  // （支出編集のときと同じく、iPhoneでの画面切り替え不具合を避けるため）
+  showScreen("recurring");
+
+  document.getElementById("recurring-name-input").value = recurring.name;
+  document.getElementById("recurring-amount-input").value = recurring.amount;
+  document.getElementById("recurring-day-input").value = recurring.dayOfMonth;
+  document.getElementById("recurring-category").value = recurring.category;
+
+  // ボタンの見た目を「編集モード」に切り替える
+  document.getElementById("save-recurring-button").textContent = "定期支出を更新";
+  document.getElementById("cancel-recurring-edit-button").style.display = "inline";
+}
+
+
+// 編集モードを終了し、定期支出フォームを「新規登録」の初期状態に戻す関数
+function cancelEditingRecurringExpense() {
+  editingRecurringId = null;
+
+  document.getElementById("recurring-name-input").value = "";
+  document.getElementById("recurring-amount-input").value = "";
+  document.getElementById("recurring-day-input").value = "";
+  document.getElementById("recurring-category").value = "";
+
+  document.getElementById("save-recurring-button").textContent = "定期支出を登録";
+  document.getElementById("cancel-recurring-edit-button").style.display = "none";
+}
+
+// 指定した年月の最終日を求める関数（例: 2026年2月 → 28）
 
 // 指定した年月の最終日を求める関数（例: 2026年2月 → 28）
 function getLastDayOfMonth(year, month) {
@@ -1016,6 +1063,13 @@ function renderRecurringList(data) {
       recurring.amount.toLocaleString() + "円／" + recurring.category;
     textElement.textContent = text;
 
+    const editButton = document.createElement("button");
+    editButton.textContent = "編集";
+    editButton.className = "recurring-edit-button";
+    editButton.addEventListener("click", function () {
+      startEditingRecurringExpense(recurring.id);
+    });
+
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "削除";
     deleteButton.className = "recurring-delete-button";
@@ -1024,6 +1078,7 @@ function renderRecurringList(data) {
     });
 
     itemElement.appendChild(textElement);
+    itemElement.appendChild(editButton);
     itemElement.appendChild(deleteButton);
     listElement.appendChild(itemElement);
   });
@@ -1576,29 +1631,74 @@ window.onload = function () {
 
     const latestData = loadData();
 
-    const newRecurring = {
-      id: latestData.nextRecurringExpenseId,
-      name: nameValue,
-      amount: amountValue,
-      dayOfMonth: dayValue,
-      category: categoryValue,          // 「家賃」または「サブスク」
-      lastGeneratedYearMonth: null      // まだ一度も支出として記録していない
-    };
+    // ここまでのチェックを通過したら、editingRecurringIdの値によって処理を分ける
+    // editingRecurringIdがnull → 新規登録モード／それ以外 → 更新モード
+    if (editingRecurringId === null) {
 
-    latestData.nextRecurringExpenseId += 1;
-    latestData.recurringExpenses.push(newRecurring);
+      // ---------------- 新規登録モード ----------------
+      const newRecurring = {
+        id: latestData.nextRecurringExpenseId,
+        name: nameValue,
+        amount: amountValue,
+        dayOfMonth: dayValue,
+        category: categoryValue,          // 「家賃」または「サブスク」
+        lastGeneratedYearMonth: null      // まだ一度も支出として記録していない
+      };
 
-    saveData(latestData);
+      latestData.nextRecurringExpenseId += 1;
+      latestData.recurringExpenses.push(newRecurring);
 
-    renderRecurringList(latestData);
+      saveData(latestData);
 
-    alert("定期支出を登録しました");
+      renderRecurringList(latestData);
 
-    // フォームをリセットする
-    nameInput.value = "";
-    amountInput.value = "";
-    dayInput.value = "";
-    categoryInput.value = "";
+      alert("定期支出を登録しました");
+
+      cancelEditingRecurringExpense(); // フォームを初期状態に戻す
+
+    } else {
+
+      // ---------------- 更新（編集）モード ----------------
+      const targetIndex = latestData.recurringExpenses.findIndex(function (r) {
+        return r.id === editingRecurringId;
+      });
+
+      // 万が一、編集対象がすでに削除されていた場合は中断する
+      if (targetIndex === -1) {
+        alert("編集対象の定期支出が見つかりませんでした");
+        cancelEditingRecurringExpense();
+        return;
+      }
+
+      const oldRecurring = latestData.recurringExpenses[targetIndex];
+
+      // 【重要】過去に自動生成された支出（data.expenses側）や残高は、ここでは一切変更しない。
+      // lastGeneratedYearMonthもそのまま引き継ぐことで、
+      // 「もう記録済みの月」が編集によって二重に記録されないようにしている。
+      // → 編集内容は「これから先」の自動生成にだけ反映される。
+      latestData.recurringExpenses[targetIndex] = {
+        id: editingRecurringId, // IDは変更しない
+        name: nameValue,
+        amount: amountValue,
+        dayOfMonth: dayValue,
+        category: categoryValue,
+        lastGeneratedYearMonth: oldRecurring.lastGeneratedYearMonth
+      };
+
+      saveData(latestData);
+
+      renderRecurringList(latestData);
+
+      alert("定期支出を更新しました");
+
+      cancelEditingRecurringExpense(); // フォームを初期状態に戻す
+    }
+  });
+
+    // --- 「キャンセル」ボタンが押されたときの処理を登録する（定期支出の編集モードの中断） ---
+  const cancelRecurringEditButton = document.getElementById("cancel-recurring-edit-button");
+  cancelRecurringEditButton.addEventListener("click", function () {
+    cancelEditingRecurringExpense();
   });
 
   // --- 画面切り替えボタンの処理を登録する ---
