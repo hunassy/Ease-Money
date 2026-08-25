@@ -595,7 +595,12 @@ function startEditingExpense(expenseId) {
     return;
   }
 
-  editingExpenseId = expenseId;
+    editingExpenseId = expenseId;
+
+  // 「支出」画面に先に切り替える（履歴画面から編集を始めた場合、フォームが見えるようにするため）
+  // ※ この後の「カテゴリのselectを作り直す処理」より先に画面を切り替えることで、
+  // 　 iPhone(iOS Safari)で画面切り替えが反映されない不具合を回避している
+  showScreen("expense");
 
   document.getElementById("expense-date-input").value = expense.date;
   document.getElementById("expense-amount-input").value = expense.amount;
@@ -612,9 +617,6 @@ function startEditingExpense(expenseId) {
   // ボタンの見た目を「編集モード」に切り替える
   document.getElementById("save-expense-button").textContent = "支出を更新";
   document.getElementById("cancel-edit-button").style.display = "inline";
-
-  // 「支出」画面に切り替える（履歴画面から編集を始めた場合、フォームが見えるようにするため）
-  showScreen("expense");
 }
 
 
