@@ -850,9 +850,12 @@ function updateWeeklySummaryDisplay(data) {
   // 　ここでは「今日より後」に発生する予定の分だけを数える）
   let upcomingRecurringTotal = 0;
   data.recurringExpenses.forEach(function (recurring) {
-    const nextDate = getNextRecurringDate(recurring, today);
-    if (nextDate <= dayBeforeIncome) {
+    // 次回収入日までに、この定期支出が何回発生するかを数える
+    // （収入日が2ヶ月以上先になる場合もあるため、1回だけでなく繰り返し数える）
+    let occurrenceDate = getNextRecurringDate(recurring, today);
+    while (occurrenceDate <= dayBeforeIncome) {
       upcomingRecurringTotal += recurring.amount;
+      occurrenceDate = getNextRecurringDate(recurring, occurrenceDate);
     }
   });
 
