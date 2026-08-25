@@ -595,7 +595,7 @@ function startEditingExpense(expenseId) {
     return;
   }
 
-    editingExpenseId = expenseId;
+  editingExpenseId = expenseId;
 
   // 「支出」画面に先に切り替える（履歴画面から編集を始めた場合、フォームが見えるようにするため）
   // ※ この後の「カテゴリのselectを作り直す処理」より先に画面を切り替えることで、
