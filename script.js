@@ -95,6 +95,15 @@ function loadData() {
     }
   });
 
+  // 【マイグレーション】isRecurringGenerated（定期支出から自動生成されたかどうかの目印）が
+  // 無い古いデータには、memoが「（定期支出）」で始まっているかどうかで判定して補う。
+  // これにより、この機能追加より前に記録された支出も、正しく「今週使った金額」から除外できる。
+  data.expenses.forEach(function (expense) {
+    if (expense.isRecurringGenerated === undefined) {
+      expense.isRecurringGenerated = expense.memo.indexOf("（定期支出）") === 0;
+    }
+  });
+
   // 定期支出についても、支出のときと同じ考え方でマイグレーションする
   if (data.nextRecurringExpenseId === undefined) {
     data.nextRecurringExpenseId = 1;
@@ -863,10 +872,15 @@ function updateWeeklySummaryDisplay(data) {
   const weeklyBudget = dailyAmount * daysThisWeek;
 
   // 今週（日〜土）に登録された支出の合計を計算する
+  // ※ 定期支出（家賃・サブスクなど）は、日割り計算の段階で既に考慮済みのため、
+  // 　 ここでの「今週使った金額」には含めない（二重に差し引かれてしまうのを防ぐため）
   const startOfWeek = getStartOfWeek(today);
   let weeklySpent = 0;
 
   data.expenses.forEach(function (expense) {
+    if (expense.isRecurringGenerated) {
+      return; // 定期支出由来の支出はスキップする
+    }
     const expenseDate = parseDateString(expense.date);
     if (expenseDate >= startOfWeek && expenseDate <= endOfWeek) {
       weeklySpent += expense.amount;
@@ -1027,7 +1041,8 @@ function processRecurringExpenses(data) {
           amount: recurring.amount,
           categoryMain: recurring.category, // 「家賃」または「サブスク」がそのまま入る
           categorySub: "",                  // 定期支出にサブカテゴリは無い
-          memo: "（定期支出）" + recurring.name
+          memo: "（定期支出）" + recurring.name,
+          isRecurringGenerated: true        // 定期支出から自動生成された支出であることの目印
         };
         data.nextExpenseId += 1;
         data.expenses.push(newExpense);
@@ -1403,7 +1418,8 @@ window.onload = function () {
         amount: amountValue,
         categoryMain: categoryMainValue,
         categorySub: categorySubValue, // 未選択の場合は ""（空文字）が入る
-        memo: memoValue                // 未入力の場合は ""（空文字）が入る
+        memo: memoValue,               // 未入力の場合は ""（空文字）が入る
+        isRecurringGenerated: false    // 手入力の支出なのでfalse
       };
 
       // 次に使うID番号を1つ進めておく（次回の登録で重複しないようにするため）
@@ -1450,7 +1466,8 @@ window.onload = function () {
         amount: amountValue,
         categoryMain: categoryMainValue,
         categorySub: categorySubValue,
-        memo: memoValue
+        memo: memoValue,
+        isRecurringGenerated: false // 履歴画面から編集した支出は、手入力扱いにする
       };
 
       saveData(latestData);
