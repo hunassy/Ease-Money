@@ -44,7 +44,6 @@ function showScreen(screenName) {
   window.scrollTo(0, 0);
 }
 
-
 // データを読み込む関数
 // まだ何も保存されていない場合は、空の初期データを返す
 function loadData() {
@@ -281,7 +280,6 @@ function updateIncomeDateDisplay(data) {
   }
 }
 
-
 // ============================================================
 // 【支出カテゴリの一覧について】
 // キー（左側）が第一階層、値の配列（右側）が第二階層。
@@ -300,7 +298,7 @@ const CATEGORY_MAP = {
 
 // 「今週使える目安」の週予算には含めず、残高から直接引くだけにするカテゴリの一覧
 // （金額が大きく・不定期に発生するカテゴリをここに追加していく）
-const WEEKLY_BUDGET_EXCLUDED_CATEGORIES = ["💡 光熱費", "📱 通信"];
+const WEEKLY_BUDGET_EXCLUDED_CATEGORIES = ["💡 光熱費", "📱 通信","🏥 医療","🐶 ペット"];
 
 
 // 今日の日付を "YYYY-MM-DD" の形式で取得する関数（<input type="date">に入れる値として使う）
