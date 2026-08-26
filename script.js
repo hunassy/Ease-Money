@@ -31,14 +31,6 @@ function showScreen(screenName) {
   // 画面を切り替えたら、開いていたメニューがあれば自動で閉じる
   document.getElementById("side-menu").style.display = "none";
 
-  // 🏠アイコンは、ホーム画面のときだけ隠す（他の画面では表示する）
-  const homeIconButton = document.getElementById("home-icon-button");
-  if (screenName === "home") {
-    homeIconButton.style.display = "none";
-  } else {
-    homeIconButton.style.display = "inline-block";
-  }
-
   // 下部ナビゲーションバーのボタンも、今の画面に合わせて強調表示を切り替える
   document.querySelectorAll("#app-nav .nav-button").forEach(function (button) {
     if (button.dataset.screen === screenName) {
@@ -305,6 +297,10 @@ const CATEGORY_MAP = {
   "🎮 娯楽": ["ゲーム", "映画", "本"],
   "📦 その他": ["交通費", "衣類", "プレゼント", "教育", "美容", "交際費", "家具/家電", "特別支出"]
 };
+
+// 「今週使える目安」の週予算には含めず、残高から直接引くだけにするカテゴリの一覧
+// （金額が大きく・不定期に発生するカテゴリをここに追加していく）
+const WEEKLY_BUDGET_EXCLUDED_CATEGORIES = ["💡 光熱費", "📱 通信"];
 
 
 // 今日の日付を "YYYY-MM-DD" の形式で取得する関数（<input type="date">に入れる値として使う）
@@ -884,8 +880,8 @@ function updateWeeklySummaryDisplay(data) {
     if (expense.isRecurringGenerated) {
       return; // 定期支出由来の支出はスキップする
     }
-    if (expense.categoryMain === "💡 光熱費") {
-      return; // 光熱費は金額が大きく不定期なので、週予算には含めず残高から直接引くだけにする
+    if (WEEKLY_BUDGET_EXCLUDED_CATEGORIES.indexOf(expense.categoryMain) !== -1) {
+      return; // 金額が大きく不定期なカテゴリは、週予算には含めず残高から直接引くだけにする
     }
     const expenseDate = parseDateString(expense.date);
     if (expenseDate >= startOfWeek && expenseDate <= endOfWeek) {
