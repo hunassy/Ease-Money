@@ -18,6 +18,38 @@ body {
   font-size: 18px;
 }
 
+/* 生活費残高エリア（ホーム画面の一番上に大きく表示） */
+#living-cost-balance-section {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 400px;
+  margin: 20px auto 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 案内メッセージ（残高・次回収入日が未登録のときに表示） */
+#living-cost-balance-message {
+  color: #d9534f;
+  font-weight: bold;
+}
+
+/* 「生活費残高」の数字を一番目立たせる */
+#living-cost-balance-display {
+  font-size: 28px;
+  font-weight: bold;
+  color: #2E7D32;
+}
+
+/* その他の数字も強調する */
+#living-cost-current-balance-display,
+#living-cost-days-until-income-display,
+#living-cost-recurring-display,
+#living-cost-estimated-display {
+  font-weight: bold;
+  color: #333333;
+}
+
 /* 今週の利用状況エリア（ホーム画面の一番上に大きく表示） */
 #weekly-summary-section {
   background-color: #ffffff;
@@ -363,7 +395,7 @@ body {
   color: #d9534f;
 }
 
-/* 定期支出エリア全体 */
+/* 確定支出エリア全体 */
 #recurring-section {
   margin-top: 20px;
   text-align: left;
@@ -388,12 +420,14 @@ body {
   margin-top: 5px;
 }
 
-/* 登録済みの定期支出一覧 */
-#recurring-list {
+/* 登録済みの確定支出一覧 */
+#recurring-list,
+#estimated-list {
   padding-left: 20px;
 }
 
-#recurring-list li {
+#recurring-list li,
+#estimated-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -401,7 +435,8 @@ body {
   margin-bottom: 6px;
 }
 
-#recurring-list li span {
+#recurring-list li span,
+#estimated-list li .estimated-item-content {
   flex: 1;
 }
 
@@ -567,4 +602,22 @@ select {
 #app-header #app-title {
   margin: 0;
   cursor: pointer;
+}
+
+/* 予想支出一覧に表示する、実績の平均額（小さめ・控えめな色） */
+.estimated-average-line {
+  font-size: 12px;
+  color: #777777;
+  margin-top: 2px;
+}
+
+/* ホーム画面に表示する、予想支出の見直しお知らせ */
+.review-notice {
+  background-color: #fff7e6;
+  color: #8a6d3b;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 10px;
 }

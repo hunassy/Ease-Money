@@ -28,6 +28,12 @@ function showScreen(screenName) {
   // 指定された画面だけを表示する
   document.getElementById("screen-" + screenName).style.display = "block";
 
+  // 確定支出・予想支出の画面に切り替わるときは、直近の実績を反映した平均額を計算し直す
+  // （他の画面で支出を登録していても、この画面を開けば必ず最新の状態になるようにするため）
+  if (screenName === "recurring") {
+    renderEstimatedList(loadData());
+  }
+
   // 画面を切り替えたら、開いていたメニューがあれば自動で閉じる
   document.getElementById("side-menu").style.display = "none";
 
@@ -57,10 +63,12 @@ function loadData() {
       nextIncomeDate: null,   // 次回収入日
       expenses: [],           // 支出の一覧
       incomes: [],            // 収入の一覧
-      recurringExpenses: [],  // 定期支出の一覧
+      recurringExpenses: [],  // 確定支出の一覧
+      estimatedExpenses: [],  // 予想支出の一覧
       balanceAdjustments: [], // 残高修正履歴
       nextExpenseId: 1,       // 次に支出へ割り振るID番号
-      nextRecurringExpenseId: 1, // 次に定期支出へ割り振るID番号
+      nextRecurringExpenseId: 1, // 次に確定支出へ割り振るID番号
+      nextEstimatedExpenseId: 1, // 次に予想支出へ割り振るID番号
       nextIncomeId: 1,        // 次に収入へ割り振るID番号
       nextBalanceAdjustmentId: 1 // 次に残高修正履歴へ割り振るID番号
     };
@@ -86,7 +94,7 @@ function loadData() {
     }
   });
 
-  // 【マイグレーション】isRecurringGenerated（定期支出から自動生成されたかどうかの目印）が
+  // 【マイグレーション】isRecurringGenerated（確定支出から自動生成されたかどうかの目印）が
   // 無い古いデータには、memoが「（定期支出）」で始まっているかどうかで判定して補う。
   // これにより、この機能追加より前に記録された支出も、正しく「今週使った金額」から除外できる。
   data.expenses.forEach(function (expense) {
@@ -95,7 +103,7 @@ function loadData() {
     }
   });
 
-  // 定期支出についても、支出のときと同じ考え方でマイグレーションする
+  // 確定支出についても、支出のときと同じ考え方でマイグレーションする
   if (data.nextRecurringExpenseId === undefined) {
     data.nextRecurringExpenseId = 1;
   }
@@ -127,6 +135,22 @@ function loadData() {
   if (data.nextBalanceAdjustmentId === undefined) {
     data.nextBalanceAdjustmentId = 1;
   }
+
+  // 予想支出が無い古いデータには、空の状態を補う
+  if (data.estimatedExpenses === undefined) {
+    data.estimatedExpenses = [];
+  }
+
+  if (data.nextEstimatedExpenseId === undefined) {
+    data.nextEstimatedExpenseId = 1;
+  }
+
+  // 支払いサイクルが無い古い予想支出データには、「毎月」を補う
+  data.estimatedExpenses.forEach(function (estimated) {
+    if (estimated.cycleMonths === undefined) {
+      estimated.cycleMonths = 1;
+    }
+  });
 
   return data;
 }
@@ -298,8 +322,28 @@ const CATEGORY_MAP = {
 
 // 「今週使える目安」の週予算には含めず、残高から直接引くだけにするカテゴリの一覧
 // （金額が大きく・不定期に発生するカテゴリをここに追加していく）
-const WEEKLY_BUDGET_EXCLUDED_CATEGORIES = ["💡 光熱費", "📱 通信","🏥 医療","🐶 ペット"];
+const WEEKLY_BUDGET_EXCLUDED_CATEGORIES = ["💡 光熱費", "📱 通信"];
 
+// 予想支出（支払うことは決まっているが、金額が変動するもの）のカテゴリ一覧
+const ESTIMATED_EXPENSE_CATEGORIES = ["電気", "ガス", "水道", "機種", "回線", "WiFi"];
+
+// 予想支出のカテゴリ名と、実績支出側のカテゴリ（メイン・内訳）の対応表
+// 生活費残高の計算で、「このカテゴリの実績が今月すでに記録されているか」を調べるために使う
+const ESTIMATED_EXPENSE_CATEGORY_MAP = {
+  "電気": { categoryMain: "💡 光熱費", categorySub: "電気" },
+  "ガス": { categoryMain: "💡 光熱費", categorySub: "ガス" },
+  "水道": { categoryMain: "💡 光熱費", categorySub: "水道" },
+  "機種": { categoryMain: "📱 通信", categorySub: "機種代" },
+  "回線": { categoryMain: "📱 通信", categorySub: "回線代" },
+  "WiFi": { categoryMain: "📱 通信", categorySub: "WiFi代" }
+};
+
+// 支払いサイクル（cycleMonths）の数字を、画面表示用の文字に変換する対応表
+const ESTIMATED_EXPENSE_CYCLE_LABELS = {
+  1: "毎月",
+  2: "2か月ごと",
+  3: "3か月ごと"
+};
 
 // 今日の日付を "YYYY-MM-DD" の形式で取得する関数（<input type="date">に入れる値として使う）
 //
@@ -319,7 +363,7 @@ function getTodayDateString() {
 
 // カテゴリの第一階層の選択肢を、CATEGORY_MAPの内容から自動的に作る関数
 // selectElementId には、選択肢を入れたい<select>のidを渡す
-// （支出登録フォームと定期支出フォームの両方から、この同じ関数を呼び出して使う）
+// （支出登録フォームと確定支出フォームの両方から、この同じ関数を呼び出して使う）
 function populateMainCategoryOptions(selectElementId) {
   const selectElement = document.getElementById(selectElementId);
 
@@ -671,6 +715,8 @@ function deleteExpense(expenseId) {
   updateBalanceDisplay(latestData);
   renderCalendar(latestData); // カレンダーを再表示する（詳細パネルは自動的に閉じる）
   updateWeeklySummaryDisplay(latestData);
+  updateLivingCostBalanceDisplay(latestData);
+  updateEstimatedReviewNotice(latestData);
 }
 
 
@@ -753,6 +799,8 @@ function deleteIncome(incomeId) {
   updateBalanceDisplay(latestData);
   renderCalendar(latestData);
   updateWeeklySummaryDisplay(latestData);
+  updateLivingCostBalanceDisplay(latestData);
+  updateEstimatedReviewNotice(latestData);
 }
 
 
@@ -835,16 +883,16 @@ function updateWeeklySummaryDisplay(data) {
   messageElement.textContent = "";
   detailsElement.style.display = "block";
 
-  // 「次回収入日の前日」を先に求めておく（定期支出の予測にも使うため）
+  // 「次回収入日の前日」を先に求めておく（確定支出の予測にも使うため）
   const dayBeforeIncome = new Date(nextIncome);
   dayBeforeIncome.setDate(nextIncome.getDate() - 1);
 
-  // 次回収入日までに発生する見込みの定期支出を合計する
+  // 次回収入日までに発生する見込みの確定支出を合計する
   // （今日発生する分はアプリ起動時にすでに残高へ反映済みなので、
   // 　ここでは「今日より後」に発生する予定の分だけを数える）
   let upcomingRecurringTotal = 0;
   data.recurringExpenses.forEach(function (recurring) {
-    // 次回収入日までに、この定期支出が何回発生するかを数える
+    // 次回収入日までに、この確定支出が何回発生するかを数える
     // （収入日が2ヶ月以上先になる場合もあるため、1回だけでなく繰り返し数える）
     let occurrenceDate = getNextRecurringDate(recurring, today);
     while (occurrenceDate <= dayBeforeIncome) {
@@ -853,7 +901,7 @@ function updateWeeklySummaryDisplay(data) {
     }
   });
 
-  // 次回収入までに使える金額 = 現在の残高 - これから発生する定期支出
+  // 次回収入までに使える金額 = 現在の残高 - これから発生する確定支出
   const availableAmount = data.currentBalance - upcomingRecurringTotal;
 
   // 1日に使える金額（設計書：次回収入までに使える金額 ÷ 次回収入までの残り日数）
@@ -869,14 +917,14 @@ function updateWeeklySummaryDisplay(data) {
   const weeklyBudget = dailyAmount * daysThisWeek;
 
   // 今週（日〜土）に登録された支出の合計を計算する
-  // ※ 定期支出（家賃・サブスクなど）は、日割り計算の段階で既に考慮済みのため、
+  // ※ 確定支出（家賃・サブスクなど）は、日割り計算の段階で既に考慮済みのため、
   // 　 ここでの「今週使った金額」には含めない（二重に差し引かれてしまうのを防ぐため）
   const startOfWeek = getStartOfWeek(today);
   let weeklySpent = 0;
 
   data.expenses.forEach(function (expense) {
     if (expense.isRecurringGenerated) {
-      return; // 定期支出由来の支出はスキップする
+      return; // 確定支出由来の支出はスキップする
     }
     if (WEEKLY_BUDGET_EXCLUDED_CATEGORIES.indexOf(expense.categoryMain) !== -1) {
       return; // 金額が大きく不定期なカテゴリは、週予算には含めず残高から直接引くだけにする
@@ -896,15 +944,232 @@ function updateWeeklySummaryDisplay(data) {
   document.getElementById("days-until-income-display").textContent = "あと" + daysUntilIncome + "日";
 }
 
+// 指定した年月に、指定したカテゴリ（メイン・内訳）の実績支出が
+// 1件でも記録されているかどうかを調べる関数（生活費残高の計算で使う）
+function hasActualExpenseInMonth(data, year, month, categoryMain, categorySub) {
+  return data.expenses.some(function (expense) {
+    if (expense.categoryMain !== categoryMain || expense.categorySub !== categorySub) {
+      return false;
+    }
+    const expenseDate = parseDateString(expense.date);
+    return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
+  });
+}
+
+// 指定したカテゴリ（メイン・内訳）について、実績支出の中で一番最近の日付を探す関数
+// 1件も無い場合は null を返す
+function findLatestActualExpenseDate(data, categoryMain, categorySub) {
+  let latestDate = null;
+
+  data.expenses.forEach(function (expense) {
+    if (expense.categoryMain !== categoryMain || expense.categorySub !== categorySub) {
+      return;
+    }
+    const expenseDate = parseDateString(expense.date);
+    if (latestDate === null || expenseDate > latestDate) {
+      latestDate = expenseDate;
+    }
+  });
+
+  return latestDate;
+}
+
+
+
+// 指定したカテゴリ（メイン・内訳）について、実績支出の直近3回・6回・9回・12回分の平均額を計算する関数
+// 実績の件数が足りない回数分は、結果に含めない（例：実績が4件しか無ければ、3回分の平均だけ返す）
+function calculateRecentAverages(data, categoryMain, categorySub) {
+  const matchingExpenses = data.expenses.filter(function (expense) {
+    return expense.categoryMain === categoryMain && expense.categorySub === categorySub;
+  });
+
+  // 日付が新しい順に並び替える（元の配列を壊さないようにslice()でコピーしてから）
+  const sortedExpenses = matchingExpenses.slice().sort(function (a, b) {
+    return parseDateString(b.date) - parseDateString(a.date);
+  });
+
+  const targetCounts = [3, 6, 9, 12];
+  const averages = {};
+
+  targetCounts.forEach(function (count) {
+    if (sortedExpenses.length >= count) {
+      const recentExpenses = sortedExpenses.slice(0, count);
+      let total = 0;
+      recentExpenses.forEach(function (expense) {
+        total += expense.amount;
+      });
+      averages[count] = Math.round(total / count);
+    }
+  });
+
+  return averages;
+}
+
+// 予想支出について、実績の平均から見直した方がよいものが1つでもあるかどうかを調べて、
+// ホーム画面の小さなお知らせの表示/非表示を切り替える関数
+function updateEstimatedReviewNotice(data) {
+  const noticeElement = document.getElementById("estimated-review-notice");
+
+  const hasSomethingToReview = data.estimatedExpenses.some(function (estimated) {
+    const matchInfo = ESTIMATED_EXPENSE_CATEGORY_MAP[estimated.category];
+    if (matchInfo === undefined) {
+      return false;
+    }
+
+    const averages = calculateRecentAverages(data, matchInfo.categoryMain, matchInfo.categorySub);
+
+    // 計算できた平均のうち、1つでも今の見込み金額と違っていれば「見直しの余地あり」とする
+    return Object.keys(averages).some(function (count) {
+      return averages[count] !== estimated.amount;
+    });
+  });
+
+  noticeElement.style.display = hasSomethingToReview ? "block" : "none";
+}
+
+// 指定した年月が、支払いサイクル的に「請求が来るはずの月」かどうかを判定する関数
+//
+// 【判定の考え方】
+// 一番最近実績が記録された月を基準（アンカー）にして、
+// そこからサイクル月数（1か月・2か月・3か月）の倍数だけ進んだ月だけを「請求が来る月」とする。
+// まだ一度も実績が無いカテゴリは、判断材料が無いため、常に「請求が来る月」として扱う（安全のため）
+function isExpectedBillingMonth(data, matchInfo, checkYear, checkMonth, cycleMonths) {
+  const latestDate = findLatestActualExpenseDate(data, matchInfo.categoryMain, matchInfo.categorySub);
+
+  if (latestDate === null) {
+    return true;
+  }
+
+  const anchorYear = latestDate.getFullYear();
+  const anchorMonth = latestDate.getMonth();
+
+  const monthsDiff = (checkYear - anchorYear) * 12 + (checkMonth - anchorMonth);
+
+  return Math.abs(monthsDiff) % cycleMonths === 0;
+}
+
+// 「生活費残高」エリアの表示を更新する関数
+//
+// 【計算の考え方】
+// 生活費残高 ＝ 現在の残高 － これから発生する確定支出 － これから発生する予想支出
+//
+// 予想支出は、今月～次回収入日までの各月について「その月にすでに実績が記録されていれば予約しない、
+// まだなら見込み額を予約する」という考え方で計算する。収入サイクルが2か月おきなどでも
+// 同じ仕組みでそのまま対応できる。
+//
+// 【なぜ「今週使える目安」の計算（updateWeeklySummaryDisplay）を使い回さないのか】
+// あちらは今も現役で動いている機能なので、コードが多少重複しても、
+// 既存の計算には一切触れないようにするため、あえて別の関数として独立させている。
+function updateLivingCostBalanceDisplay(data) {
+  const messageElement = document.getElementById("living-cost-balance-message");
+  const detailsElement = document.getElementById("living-cost-balance-details");
+
+  // --- 前提条件のチェック：足りない情報があれば、案内メッセージだけ表示して終了する ---
+
+  if (data.nextIncomeDate === null) {
+    messageElement.textContent = "次回収入日を登録してください";
+    detailsElement.style.display = "none";
+    return;
+  }
+
+  if (data.currentBalance === null) {
+    messageElement.textContent = "残高を登録してください";
+    detailsElement.style.display = "none";
+    return;
+  }
+
+  const today = parseDateString(getTodayDateString());
+  const nextIncome = parseDateString(data.nextIncomeDate);
+  const daysUntilIncome = daysBetween(today, nextIncome);
+
+  if (daysUntilIncome <= 0) {
+    messageElement.textContent = "次回収入日を過ぎています。次回収入日を更新してください";
+    detailsElement.style.display = "none";
+    return;
+  }
+
+  // --- ここまで来たら、計算に必要な情報はすべて揃っている ---
+  messageElement.textContent = "";
+  detailsElement.style.display = "block";
+
+  // 「次回収入日の前日」を先に求めておく
+  const dayBeforeIncome = new Date(nextIncome);
+  dayBeforeIncome.setDate(nextIncome.getDate() - 1);
+
+  // --- 次回収入日までに発生する見込みの「確定支出」の合計 ---
+  let upcomingRecurringTotal = 0;
+  data.recurringExpenses.forEach(function (recurring) {
+    let occurrenceDate = getNextRecurringDate(recurring, today);
+    while (occurrenceDate <= dayBeforeIncome) {
+      upcomingRecurringTotal += recurring.amount;
+      occurrenceDate = getNextRecurringDate(recurring, occurrenceDate);
+    }
+  });
+
+  // --- 次回収入日までに発生する見込みの「予想支出」の合計 ---
+  // 「今月」から「次回収入日の前日を含む月」まで、1か月ずつ確認していく
+  let upcomingEstimatedTotal = 0;
+  data.estimatedExpenses.forEach(function (estimated) {
+    const matchInfo = ESTIMATED_EXPENSE_CATEGORY_MAP[estimated.category];
+
+    // 万が一、対応表に無いカテゴリだった場合は計算に含めない（安全のため）
+    if (matchInfo === undefined) {
+      return;
+    }
+
+    let checkYear = today.getFullYear();
+    let checkMonth = today.getMonth();
+
+    const endYear = dayBeforeIncome.getFullYear();
+    const endMonth = dayBeforeIncome.getMonth();
+
+    while (checkYear < endYear || (checkYear === endYear && checkMonth <= endMonth)) {
+      // このカテゴリの支払いサイクル的に、この月に請求が来る予定かどうかを確認する
+      // （例：水道が2か月ごとの場合、請求が来ない月はそもそも予約しない）
+      const isBillingMonth = isExpectedBillingMonth(
+        data, matchInfo, checkYear, checkMonth, estimated.cycleMonths
+      );
+
+      if (isBillingMonth) {
+        const alreadyRecorded = hasActualExpenseInMonth(
+          data, checkYear, checkMonth, matchInfo.categoryMain, matchInfo.categorySub
+        );
+
+        if (!alreadyRecorded) {
+          upcomingEstimatedTotal += estimated.amount;
+        }
+      }
+
+      checkMonth += 1;
+      if (checkMonth > 11) {
+        checkMonth = 0;
+        checkYear += 1;
+      }
+    }
+  });
+
+  // --- 生活費残高を計算する ---
+  const livingCostBalance = data.currentBalance - upcomingRecurringTotal - upcomingEstimatedTotal;
+
+  // --- 画面に反映する ---
+  document.getElementById("living-cost-balance-display").textContent = livingCostBalance.toLocaleString() + "円";
+  document.getElementById("living-cost-recurring-display").textContent = upcomingRecurringTotal.toLocaleString() + "円";
+  document.getElementById("living-cost-estimated-display").textContent = upcomingEstimatedTotal.toLocaleString() + "円";
+  document.getElementById("living-cost-current-balance-display").textContent = data.currentBalance.toLocaleString() + "円";
+  document.getElementById("living-cost-days-until-income-display").textContent = "あと" + daysUntilIncome + "日";
+}
+
 // ============================================================
-// 【定期支出関連】
+// 【確定支出関連】
 // ============================================================
 
-// 現在編集中の定期支出のID番号。編集していないときは null
+// 現在編集中の確定支出のID番号。編集していないときは null
 let editingRecurringId = null;
 
+// 現在編集中の予想支出のID番号。編集していないときは null
+let editingEstimatedId = null;
 
-// 指定した定期支出のデータを、定期支出フォームに読み込んで「編集モード」にする関数
+// 指定した確定支出のデータを、確定支出フォームに読み込んで「編集モード」にする関数
 function startEditingRecurringExpense(recurringId) {
   const data = loadData();
   const recurring = data.recurringExpenses.find(function (r) {
@@ -917,10 +1182,15 @@ function startEditingRecurringExpense(recurringId) {
   }
 
   editingRecurringId = recurringId;
+  editingEstimatedId = null; // 予想支出側の編集モードは解除しておく
 
   // 先に画面を切り替えてから、フォームに値をセットする
   // （支出編集のときと同じく、iPhoneでの画面切り替え不具合を避けるため）
   showScreen("recurring");
+
+  // フォームを「確定支出」用の見た目に切り替える
+  document.getElementById("recurring-type-select").value = "fixed";
+  applyRecurringTypeToForm("fixed");
 
   document.getElementById("recurring-name-input").value = recurring.name;
   document.getElementById("recurring-amount-input").value = recurring.amount;
@@ -928,21 +1198,117 @@ function startEditingRecurringExpense(recurringId) {
   document.getElementById("recurring-category").value = recurring.category;
 
   // ボタンの見た目を「編集モード」に切り替える
-  document.getElementById("save-recurring-button").textContent = "定期支出を更新";
+  document.getElementById("save-recurring-button").textContent = "確定支出を更新";
   document.getElementById("cancel-recurring-edit-button").style.display = "inline";
 }
 
 
-// 編集モードを終了し、定期支出フォームを「新規登録」の初期状態に戻す関数
+// 指定した予想支出のデータを、フォームに読み込んで「編集モード」にする関数
+function startEditingEstimatedExpense(estimatedId) {
+  const data = loadData();
+  const estimated = data.estimatedExpenses.find(function (e) {
+    return e.id === estimatedId;
+  });
+
+  if (estimated === undefined) {
+    return;
+  }
+
+  editingEstimatedId = estimatedId;
+  editingRecurringId = null; // 確定支出側の編集モードは解除しておく
+
+  showScreen("recurring");
+
+  // フォームを「予想支出」用の見た目に切り替える
+  document.getElementById("recurring-type-select").value = "estimated";
+  applyRecurringTypeToForm("estimated");
+
+  document.getElementById("recurring-category").value = estimated.category;
+  document.getElementById("recurring-amount-input").value = estimated.amount;
+  document.getElementById("recurring-cycle-select").value = estimated.cycleMonths;
+
+  document.getElementById("save-recurring-button").textContent = "予想支出を更新";
+  document.getElementById("cancel-recurring-edit-button").style.display = "inline";
+}
+
+
+// 「種類」（確定支出／予想支出）に応じて、カテゴリの選択肢を作り直す関数
+function updateRecurringCategoryOptions(type) {
+  const selectElement = document.getElementById("recurring-category");
+  selectElement.innerHTML = '<option value="">選択してください</option>';
+
+  const categoryList = (type === "estimated")
+    ? ESTIMATED_EXPENSE_CATEGORIES
+    : ["家賃", "サブスク", "ペット保険"];
+
+  categoryList.forEach(function (categoryName) {
+    const optionElement = document.createElement("option");
+    optionElement.value = categoryName;
+    optionElement.textContent = categoryName;
+    selectElement.appendChild(optionElement);
+  });
+}
+
+
+// 「種類」に応じて、名称・引き落とし日の入力欄を表示/非表示にする関数
+// （予想支出には「名称」「引き落とし日」の概念が無いため）
+function updateRecurringFormFieldsVisibility(type) {
+  const nameRowElement = document.getElementById("recurring-name-row");
+  const dayRowElement = document.getElementById("recurring-day-row");
+  const cycleRowElement = document.getElementById("recurring-cycle-row");
+  const amountLabelElement = document.getElementById("recurring-amount-label");
+
+  if (type === "estimated") {
+    nameRowElement.style.display = "none";
+    dayRowElement.style.display = "none";
+    cycleRowElement.style.display = "block";
+    amountLabelElement.textContent = "1回あたりの見込み金額：";
+  } else {
+    nameRowElement.style.display = "block";
+    dayRowElement.style.display = "block";
+    cycleRowElement.style.display = "none";
+    amountLabelElement.textContent = "金額：";
+  }
+}
+
+// 「種類」の選択に合わせて、カテゴリ選択肢・入力欄の表示・保存ボタンの文言をまとめて切り替える関数
+function applyRecurringTypeToForm(type) {
+  updateRecurringCategoryOptions(type);
+  updateRecurringFormFieldsVisibility(type);
+  updateSaveButtonLabel(type);
+}
+
+// 「種類」と、今が新規登録中か編集中かに応じて、保存ボタンの文言を切り替える関数
+// （「種類」のプルダウンをユーザーが直接変更したときに、ボタンの文言が古いままにならないようにするため）
+function updateSaveButtonLabel(type) {
+  const isEditing = (type === "estimated")
+    ? (editingEstimatedId !== null)
+    : (editingRecurringId !== null);
+
+  const typeLabel = (type === "estimated") ? "予想支出" : "確定支出";
+  const actionLabel = isEditing ? "更新" : "登録";
+
+  document.getElementById("save-recurring-button").textContent = typeLabel + "を" + actionLabel;
+}
+
+
+
+// 編集モードを終了し、フォームを「新規登録（確定支出）」の初期状態に戻す関数
+// ※確定支出・予想支出、両方の編集モードをまとめて解除する
 function cancelEditingRecurringExpense() {
   editingRecurringId = null;
+  editingEstimatedId = null;
+
+  document.getElementById("recurring-type-select").value = "fixed";
+  applyRecurringTypeToForm("fixed");
 
   document.getElementById("recurring-name-input").value = "";
   document.getElementById("recurring-amount-input").value = "";
   document.getElementById("recurring-day-input").value = "";
   document.getElementById("recurring-category").value = "";
+  document.getElementById("recurring-cycle-select").value = "1";
 
-  document.getElementById("save-recurring-button").textContent = "定期支出を登録";
+  document.getElementById("save-recurring-button").textContent = "確定支出を登録";
   document.getElementById("cancel-recurring-edit-button").style.display = "none";
 }
 
@@ -955,7 +1321,7 @@ function getLastDayOfMonth(year, month) {
 }
 
 
-// 定期支出の「指定した年月における引き落とし日」を求める関数
+// 確定支出の「指定した年月における引き落とし日」を求める関数
 // dayOfMonthがその月に存在しない日（31日など）の場合は、その月の最終日に繰り下げる
 function getDebitDateInMonth(recurring, year, month) {
   const lastDay = getLastDayOfMonth(year, month);
@@ -965,7 +1331,7 @@ function getDebitDateInMonth(recurring, year, month) {
 
 
 // 指定した日付（afterDate）より後で、直近の引き落とし日を求める関数
-// 「今週の利用目安」の計算で、これから発生する定期支出を予測するために使う
+// 「今週の利用目安」の計算で、これから発生する確定支出を予測するために使う
 function getNextRecurringDate(recurring, afterDate) {
   let year = afterDate.getFullYear();
   let month = afterDate.getMonth();
@@ -985,7 +1351,7 @@ function getNextRecurringDate(recurring, afterDate) {
 }
 
 
-// 登録されている定期支出をチェックし、引き落とし日を過ぎているものを
+// 登録されている確定支出をチェックし、引き落とし日を過ぎているものを
 // 通常の支出として自動的に記録する関数
 //
 // 【しばらくアプリを開いていなかった場合について】
@@ -1040,9 +1406,9 @@ function processRecurringExpenses(data) {
           date: dateString,
           amount: recurring.amount,
           categoryMain: recurring.category, // 「家賃」または「サブスク」がそのまま入る
-          categorySub: "",                  // 定期支出にサブカテゴリは無い
+          categorySub: "",                  // 確定支出にサブカテゴリは無い
           memo: "（定期支出）" + recurring.name,
-          isRecurringGenerated: true        // 定期支出から自動生成された支出であることの目印
+          isRecurringGenerated: true        // 確定支出から自動生成された支出であることの目印
         };
         data.nextExpenseId += 1;
         data.expenses.push(newExpense);
@@ -1065,7 +1431,7 @@ function processRecurringExpenses(data) {
 }
 
 
-// 登録済みの定期支出一覧を画面に表示する関数
+// 登録済みの確定支出一覧を画面に表示する関数
 function renderRecurringList(data) {
   const listElement = document.getElementById("recurring-list");
   listElement.innerHTML = "";
@@ -1099,11 +1465,279 @@ function renderRecurringList(data) {
   });
 }
 
+// 登録済みの予想支出一覧を画面に表示する関数
+function renderEstimatedList(data) {
+  const listElement = document.getElementById("estimated-list");
+  listElement.innerHTML = "";
 
-// 指定したIDの定期支出「設定」を削除する関数
+  data.estimatedExpenses.forEach(function (estimated) {
+    const itemElement = document.createElement("li");
+
+    // メインの情報（カテゴリ・サイクル・金額）と、平均額の情報をまとめて入れる箱
+    const contentElement = document.createElement("div");
+    contentElement.className = "estimated-item-content";
+
+    const mainLineElement = document.createElement("div");
+    const cycleLabel = ESTIMATED_EXPENSE_CYCLE_LABELS[estimated.cycleMonths];
+    mainLineElement.textContent = estimated.category + "／" + cycleLabel + "／" +estimated.amount.toLocaleString() + "円（見込み）";
+    contentElement.appendChild(mainLineElement);
+
+    // 実績の平均額を計算し、データが十分にある回数分だけ、小さめの文字で表示する
+    const matchInfo = ESTIMATED_EXPENSE_CATEGORY_MAP[estimated.category];
+    if (matchInfo !== undefined) {
+      const averages = calculateRecentAverages(data, matchInfo.categoryMain, matchInfo.categorySub);
+      const averageTexts = [];
+
+      [3, 6, 9, 12].forEach(function (count) {
+        if (averages[count] !== undefined) {
+          averageTexts.push("直近" + count + "回平均：" + averages[count].toLocaleString() + "円");
+        }
+      });
+
+      if (averageTexts.length > 0) {
+        const averageLineElement = document.createElement("div");
+        averageLineElement.className = "estimated-average-line";
+        averageLineElement.textContent = averageTexts.join("／");
+        contentElement.appendChild(averageLineElement);
+      }
+    }
+
+    const editButton = document.createElement("button");
+    editButton.textContent = "編集";
+    editButton.className = "recurring-edit-button";
+    editButton.addEventListener("click", function () {
+      startEditingEstimatedExpense(estimated.id);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "削除";
+    deleteButton.className = "recurring-delete-button";
+    deleteButton.addEventListener("click", function () {
+      deleteEstimatedExpense(estimated.id);
+    });
+
+    itemElement.appendChild(contentElement);
+    itemElement.appendChild(editButton);
+    itemElement.appendChild(deleteButton);
+    listElement.appendChild(itemElement);
+  });
+}
+
+// 「確定支出」フォームの内容を保存する関数
+function saveFixedRecurringExpenseForm() {
+  const nameInput = document.getElementById("recurring-name-input");
+  const amountInput = document.getElementById("recurring-amount-input");
+  const dayInput = document.getElementById("recurring-day-input");
+  const categoryInput = document.getElementById("recurring-category");
+
+  const nameValue = nameInput.value;
+  const amountValue = Number(amountInput.value);
+  const dayValue = Number(dayInput.value);
+  const categoryValue = categoryInput.value;
+
+  // 入力チェック①：名称が空の場合は止める
+  if (nameValue === "") {
+    alert("名称を入力してください");
+    return;
+  }
+
+  // 入力チェック②：金額が0円以下、または未入力（NaN）の場合は止める
+  if (amountInput.value === "" || Number.isNaN(amountValue) || amountValue <= 0) {
+    alert("金額は1円以上の数字を入力してください");
+    return;
+  }
+
+  // 入力チェック③：金額が整数でない場合は止める
+  if (!Number.isInteger(amountValue)) {
+    alert("金額は整数で入力してください");
+    return;
+  }
+
+  // 入力チェック④：引き落とし日が1〜31の整数か確認する
+  if (dayInput.value === "" || Number.isNaN(dayValue) || !Number.isInteger(dayValue) || dayValue < 1 || dayValue > 31) {
+    alert("引き落とし日は1〜31の数字で入力してください");
+    return;
+  }
+
+  // 入力チェック⑤：カテゴリが選ばれていない場合は止める
+  if (categoryValue === "") {
+    alert("カテゴリを選択してください");
+    return;
+  }
+
+  const latestData = loadData();
+
+  // editingRecurringIdがnull → 新規登録モード／それ以外 → 更新モード
+  if (editingRecurringId === null) {
+
+    // ---------------- 新規登録モード ----------------
+    const newRecurring = {
+      id: latestData.nextRecurringExpenseId,
+      name: nameValue,
+      amount: amountValue,
+      dayOfMonth: dayValue,
+      category: categoryValue,
+      lastGeneratedYearMonth: null      // まだ一度も支出として記録していない
+    };
+
+    latestData.nextRecurringExpenseId += 1;
+    latestData.recurringExpenses.push(newRecurring);
+
+    saveData(latestData);
+    renderRecurringList(latestData);
+    updateLivingCostBalanceDisplay(latestData);
+    updateEstimatedReviewNotice(latestData);
+
+    alert("確定支出を登録しました");
+    cancelEditingRecurringExpense();
+
+  } else {
+
+    // ---------------- 更新（編集）モード ----------------
+    const targetIndex = latestData.recurringExpenses.findIndex(function (r) {
+      return r.id === editingRecurringId;
+    });
+
+    if (targetIndex === -1) {
+      alert("編集対象の確定支出が見つかりませんでした");
+      cancelEditingRecurringExpense();
+      return;
+    }
+
+    const oldRecurring = latestData.recurringExpenses[targetIndex];
+
+    // 【重要】過去に自動生成された支出（data.expenses側）や残高は、ここでは一切変更しない。
+    // lastGeneratedYearMonthもそのまま引き継ぐことで、
+    // 「もう記録済みの月」が編集によって二重に記録されないようにしている。
+    latestData.recurringExpenses[targetIndex] = {
+      id: editingRecurringId,
+      name: nameValue,
+      amount: amountValue,
+      dayOfMonth: dayValue,
+      category: categoryValue,
+      lastGeneratedYearMonth: oldRecurring.lastGeneratedYearMonth
+    };
+
+    saveData(latestData);
+    renderRecurringList(latestData);
+    updateLivingCostBalanceDisplay(latestData);
+    updateEstimatedReviewNotice(latestData);
+
+    alert("確定支出を更新しました");
+    cancelEditingRecurringExpense();
+  }
+}
+
+// 「予想支出」フォームの内容を保存する関数
+function saveEstimatedExpenseForm() {
+  const amountInput = document.getElementById("recurring-amount-input");
+  const categoryInput = document.getElementById("recurring-category");
+  const cycleInput = document.getElementById("recurring-cycle-select");
+
+  const amountValue = Number(amountInput.value);
+  const categoryValue = categoryInput.value;
+  const cycleValue = Number(cycleInput.value);
+
+  // 入力チェック①：金額が0円以下、または未入力（NaN）の場合は止める
+  if (amountInput.value === "" || Number.isNaN(amountValue) || amountValue <= 0) {
+    alert("金額は1円以上の数字を入力してください");
+    return;
+  }
+
+  // 入力チェック②：金額が整数でない場合は止める
+  if (!Number.isInteger(amountValue)) {
+    alert("金額は整数で入力してください");
+    return;
+  }
+
+  // 入力チェック③：カテゴリが選ばれていない場合は止める
+  if (categoryValue === "") {
+    alert("カテゴリを選択してください");
+    return;
+  }
+
+  const latestData = loadData();
+
+  // editingEstimatedIdがnull → 新規登録モード／それ以外 → 更新モード
+  if (editingEstimatedId === null) {
+
+    // ---------------- 新規登録モード ----------------
+    const newEstimated = {
+      id: latestData.nextEstimatedExpenseId,
+      category: categoryValue,
+      amount: amountValue,
+      cycleMonths: cycleValue
+    };
+
+    latestData.nextEstimatedExpenseId += 1;
+    latestData.estimatedExpenses.push(newEstimated);
+
+    saveData(latestData);
+    renderEstimatedList(latestData);
+    updateLivingCostBalanceDisplay(latestData);
+    updateEstimatedReviewNotice(latestData);
+
+    alert("予想支出を登録しました");
+    cancelEditingRecurringExpense();
+
+  } else {
+
+    // ---------------- 更新（編集）モード ----------------
+    const targetIndex = latestData.estimatedExpenses.findIndex(function (e) {
+      return e.id === editingEstimatedId;
+    });
+
+    if (targetIndex === -1) {
+      alert("編集対象の予想支出が見つかりませんでした");
+      cancelEditingRecurringExpense();
+      return;
+    }
+
+    latestData.estimatedExpenses[targetIndex] = {
+      id: editingEstimatedId,
+      category: categoryValue,
+      amount: amountValue,
+      cycleMonths: cycleValue
+    };
+
+    saveData(latestData);
+    renderEstimatedList(latestData);
+    updateLivingCostBalanceDisplay(latestData);
+    updateEstimatedReviewNotice(latestData);
+
+    alert("予想支出を更新しました");
+    cancelEditingRecurringExpense();
+  }
+}
+
+// 指定したIDの予想支出を削除する関数
+function deleteEstimatedExpense(estimatedId) {
+  const confirmed = confirm("この予想支出の設定を削除しますか？");
+  if (!confirmed) {
+    return;
+  }
+
+  const latestData = loadData();
+  const targetIndex = latestData.estimatedExpenses.findIndex(function (e) {
+    return e.id === estimatedId;
+  });
+
+  if (targetIndex === -1) {
+    return;
+  }
+
+  latestData.estimatedExpenses.splice(targetIndex, 1);
+  saveData(latestData);
+
+  renderEstimatedList(latestData);
+  updateLivingCostBalanceDisplay(latestData);
+  updateEstimatedReviewNotice(latestData);
+}
+
+// 指定したIDの確定支出「設定」を削除する関数
 // 過去に自動生成された支出（data.expenses側のデータ）はここでは一切変更しない
 function deleteRecurringExpense(recurringId) {
-  const confirmed = confirm("この定期支出の設定を削除しますか？（すでに記録された支出履歴は残ります）");
+  const confirmed = confirm("この確定支出の設定を削除しますか？（すでに記録された支出履歴は残ります）");
   if (!confirmed) {
     return;
   }
@@ -1121,6 +1755,8 @@ function deleteRecurringExpense(recurringId) {
   saveData(latestData);
 
   renderRecurringList(latestData);
+  updateLivingCostBalanceDisplay(latestData);
+  updateEstimatedReviewNotice(latestData);
 }
 
 
@@ -1135,7 +1771,7 @@ window.onload = function () {
   // --- 保存されているデータを読み込んで、画面に反映する ---
   const data = loadData();
 
-  // --- 定期支出の自動反映（引き落とし日を過ぎているものを、通常の支出として記録する） ---
+  // --- 確定支出の自動反映（引き落とし日を過ぎているものを、通常の支出として記録する） ---
   const generatedExpense = processRecurringExpenses(data);
   if (generatedExpense) {
     saveData(data); // 新しく支出が生成された場合のみ、保存し直す
@@ -1144,6 +1780,8 @@ window.onload = function () {
   updateBalanceDisplay(data);
   updateIncomeDateDisplay(data);
   updateWeeklySummaryDisplay(data);
+  updateLivingCostBalanceDisplay(data);
+  updateEstimatedReviewNotice(data);
   renderBalanceAdjustmentList(data); // 残高修正履歴を表示する
 
   // --- 支出フォームの初期化 ---
@@ -1154,10 +1792,16 @@ window.onload = function () {
   // --- 収入フォームの初期化 ---
   document.getElementById("income-entry-date-input").value = getTodayDateString(); // 日付の初期値を今日にする
 
-  // --- 定期支出フォームの初期化 ---
-  // カテゴリは固定の2択（家賃・サブスク）をHTMLに直接書いているので、
-  // 支出フォームのようなカテゴリ選択肢を作る処理は不要
+  // --- 確定支出・予想支出フォームの初期化 ---
+  applyRecurringTypeToForm("fixed"); // 最初は「確定支出」用の見た目にしておく
   renderRecurringList(data);
+  renderEstimatedList(data);
+
+  // 「種類」が切り替えられたら、フォームの見た目を切り替える
+  const recurringTypeSelect = document.getElementById("recurring-type-select");
+  recurringTypeSelect.addEventListener("change", function () {
+    applyRecurringTypeToForm(recurringTypeSelect.value);
+  });
 
   // --- 履歴カレンダーの初期化（最初は「今日を含む月」を表示する） ---
   const todayForCalendar = new Date();
@@ -1225,6 +1869,8 @@ window.onload = function () {
     // 画面の表示を更新する
     updateBalanceDisplay(latestData);
     updateWeeklySummaryDisplay(latestData);
+    updateLivingCostBalanceDisplay(latestData);
+    updateEstimatedReviewNotice(latestData);
 
     // 入力欄を空にする
     inputElement.value = "";
@@ -1279,6 +1925,8 @@ window.onload = function () {
     // 画面の表示を更新する（今週の利用状況もここで再計算される）
     updateBalanceDisplay(latestData);
     updateWeeklySummaryDisplay(latestData);
+    updateLivingCostBalanceDisplay(latestData);
+    updateEstimatedReviewNotice(latestData);
     renderBalanceAdjustmentList(latestData);
 
     alert(
@@ -1314,6 +1962,8 @@ window.onload = function () {
     // 画面の表示を更新する
     updateIncomeDateDisplay(latestData);
     updateWeeklySummaryDisplay(latestData);
+    updateLivingCostBalanceDisplay(latestData);
+    updateEstimatedReviewNotice(latestData);
 
     // 入力欄を空にする
     inputElement.value = "";
@@ -1436,7 +2086,9 @@ window.onload = function () {
       updateBalanceDisplay(latestData);
       renderCalendar(latestData);
       updateWeeklySummaryDisplay(latestData);
-
+      updateLivingCostBalanceDisplay(latestData);
+      updateEstimatedReviewNotice(latestData);
+      
       alert("支出を登録しました");
       cancelEditingExpense(); // フォームを初期状態に戻す
 
@@ -1475,7 +2127,9 @@ window.onload = function () {
       updateBalanceDisplay(latestData);
       renderCalendar(latestData);
       updateWeeklySummaryDisplay(latestData);
-
+      updateLivingCostBalanceDisplay(latestData);
+      updateEstimatedReviewNotice(latestData);
+      
       alert("支出を更新しました");
       cancelEditingExpense(); // フォームを初期状態に戻す
     }
@@ -1555,7 +2209,9 @@ window.onload = function () {
       updateBalanceDisplay(latestData);
       renderCalendar(latestData);
       updateWeeklySummaryDisplay(latestData);
-
+      updateLivingCostBalanceDisplay(latestData);
+      updateEstimatedReviewNotice(latestData);
+      
       alert("収入を登録しました");
       cancelEditingIncome(); // フォームを初期状態に戻す
 
@@ -1590,6 +2246,8 @@ window.onload = function () {
       updateBalanceDisplay(latestData);
       renderCalendar(latestData);
       updateWeeklySummaryDisplay(latestData);
+      updateLivingCostBalanceDisplay(latestData);
+      updateEstimatedReviewNotice(latestData);
 
       alert("収入を更新しました");
       cancelEditingIncome();
@@ -1602,117 +2260,21 @@ window.onload = function () {
     cancelEditingIncome();
   });
 
-  // --- 「定期支出を登録」ボタンが押されたときの処理を登録する ---
+  // --- 「確定支出を登録」「予想支出を登録」ボタンが押されたときの処理を登録する ---
+  // ボタンは1つだが、「種類」の選択によって保存先を振り分ける
   const saveRecurringButton = document.getElementById("save-recurring-button");
 
   saveRecurringButton.addEventListener("click", function () {
-    const nameInput = document.getElementById("recurring-name-input");
-    const amountInput = document.getElementById("recurring-amount-input");
-    const dayInput = document.getElementById("recurring-day-input");
-    const categoryInput = document.getElementById("recurring-category");
+    const typeValue = document.getElementById("recurring-type-select").value;
 
-    const nameValue = nameInput.value;
-    const amountValue = Number(amountInput.value);
-    const dayValue = Number(dayInput.value);
-    const categoryValue = categoryInput.value;
-
-    // 入力チェック①：名称が空の場合は止める
-    if (nameValue === "") {
-      alert("名称を入力してください");
-      return;
-    }
-
-    // 入力チェック②：金額が0円以下、または未入力（NaN）の場合は止める
-    if (amountInput.value === "" || Number.isNaN(amountValue) || amountValue <= 0) {
-      alert("金額は1円以上の数字を入力してください");
-      return;
-    }
-
-    // 入力チェック③：金額が整数でない場合は止める
-    if (!Number.isInteger(amountValue)) {
-      alert("金額は整数で入力してください");
-      return;
-    }
-
-    // 入力チェック④：引き落とし日が1〜31の整数か確認する
-    if (dayInput.value === "" || Number.isNaN(dayValue) || !Number.isInteger(dayValue) || dayValue < 1 || dayValue > 31) {
-      alert("引き落とし日は1〜31の数字で入力してください");
-      return;
-    }
-
-    // 入力チェック⑤：カテゴリ（家賃 or サブスク）が選ばれていない場合は止める
-    if (categoryValue === "") {
-      alert("カテゴリを選択してください");
-      return;
-    }
-
-    const latestData = loadData();
-
-    // ここまでのチェックを通過したら、editingRecurringIdの値によって処理を分ける
-    // editingRecurringIdがnull → 新規登録モード／それ以外 → 更新モード
-    if (editingRecurringId === null) {
-
-      // ---------------- 新規登録モード ----------------
-      const newRecurring = {
-        id: latestData.nextRecurringExpenseId,
-        name: nameValue,
-        amount: amountValue,
-        dayOfMonth: dayValue,
-        category: categoryValue,          // 「家賃」または「サブスク」
-        lastGeneratedYearMonth: null      // まだ一度も支出として記録していない
-      };
-
-      latestData.nextRecurringExpenseId += 1;
-      latestData.recurringExpenses.push(newRecurring);
-
-      saveData(latestData);
-
-      renderRecurringList(latestData);
-
-      alert("定期支出を登録しました");
-
-      cancelEditingRecurringExpense(); // フォームを初期状態に戻す
-
+    if (typeValue === "estimated") {
+      saveEstimatedExpenseForm();
     } else {
-
-      // ---------------- 更新（編集）モード ----------------
-      const targetIndex = latestData.recurringExpenses.findIndex(function (r) {
-        return r.id === editingRecurringId;
-      });
-
-      // 万が一、編集対象がすでに削除されていた場合は中断する
-      if (targetIndex === -1) {
-        alert("編集対象の定期支出が見つかりませんでした");
-        cancelEditingRecurringExpense();
-        return;
-      }
-
-      const oldRecurring = latestData.recurringExpenses[targetIndex];
-
-      // 【重要】過去に自動生成された支出（data.expenses側）や残高は、ここでは一切変更しない。
-      // lastGeneratedYearMonthもそのまま引き継ぐことで、
-      // 「もう記録済みの月」が編集によって二重に記録されないようにしている。
-      // → 編集内容は「これから先」の自動生成にだけ反映される。
-      latestData.recurringExpenses[targetIndex] = {
-        id: editingRecurringId, // IDは変更しない
-        name: nameValue,
-        amount: amountValue,
-        dayOfMonth: dayValue,
-        category: categoryValue,
-        lastGeneratedYearMonth: oldRecurring.lastGeneratedYearMonth
-      };
-
-      saveData(latestData);
-
-      renderRecurringList(latestData);
-
-      alert("定期支出を更新しました");
-
-      cancelEditingRecurringExpense(); // フォームを初期状態に戻す
+      saveFixedRecurringExpenseForm();
     }
   });
 
-    // --- 「キャンセル」ボタンが押されたときの処理を登録する（定期支出の編集モードの中断） ---
+    // --- 「キャンセル」ボタンが押されたときの処理を登録する（確定支出の編集モードの中断） ---
   const cancelRecurringEditButton = document.getElementById("cancel-recurring-edit-button");
   cancelRecurringEditButton.addEventListener("click", function () {
     cancelEditingRecurringExpense();

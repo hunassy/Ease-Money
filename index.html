@@ -22,7 +22,7 @@
   <!-- ☰を押すと表示される簡易メニュー。普段は隠しておく -->
   <div id="side-menu" style="display:none;">
     <button data-screen="history">履歴</button>
-    <button data-screen="recurring">定期支出の管理</button>
+    <button data-screen="recurring">確定支出の管理</button>
     <button data-screen="balance-adjustment">残高の修正</button>
     <button data-screen="settings">設定</button>
   </div>
@@ -35,8 +35,38 @@
   <!-- ============================================================ -->
    <div id="screen-home" class="app-screen">
 
+    <!-- ここから「生活費残高」を表示するエリア -->
+    <section id="living-cost-balance-section">
+      <h2>生活費残高</h2>
+
+      <!-- 予想支出の見直しに役立つ情報がある時だけ表示する、小さなお知らせ -->
+      <!-- data-screen属性を持たせているので、タップすると自動的に確定支出画面に移動する -->
+      <p id="estimated-review-notice" class="review-notice" data-screen="recurring" style="display:none;">
+        📋 予想支出の見直しに役立つ情報があります（タップで確認）
+      </p>
+
+      <p id="living-cost-balance-message"></p>
+
+      <div id="living-cost-balance-details">
+        <p id="living-cost-balance-line">
+          <span id="living-cost-balance-display">-</span>
+        </p>
+
+        <p>
+          内訳（次回収入日までの見込み）：
+          確定支出 <span id="living-cost-recurring-display">-</span>／
+          予想支出 <span id="living-cost-estimated-display">-</span>
+        </p>
+
+        <p>現在残高：<span id="living-cost-current-balance-display">未登録</span></p>
+
+        <p>次回収入日までの日数：<span id="living-cost-days-until-income-display">-</span></p>
+      </div>
+    </section>
+
     <!-- ここから「今週使える目安（今週の利用状況）」を表示するエリア -->
-    <section id="weekly-summary-section">
+    <!-- 設計書の指示により、現在は非表示にしている（削除はしない。計算の仕組みは裏で動き続けている） -->
+    <section id="weekly-summary-section" style="display:none;">
       <h2>今週使える目安</h2>
 
       <!-- 残高・次回収入日が未登録の場合の案内文はここに表示する -->
@@ -58,7 +88,7 @@
       </div>
     </section>
 
-    <!-- 各機能への入口（収入・支出のみ。定期支出・履歴はメニューへ移動） -->
+    <!-- 各機能への入口（収入・支出のみ。確定支出・履歴はメニューへ移動） -->
     <div id="home-shortcut-buttons">
       <button class="home-shortcut-button" data-screen="income">収入の登録</button>
       <button class="home-shortcut-button" data-screen="expense">支出の登録</button>
@@ -146,46 +176,61 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- 🔁 定期支出画面 -->
+  <!-- 🔁 確定支出画面 -->
   <!-- ============================================================ -->
   <div id="screen-recurring" class="app-screen">
 
-    <!-- ここから「定期支出を登録する」ためのエリア -->
-    <section id="recurring-section">
-      <h2>定期支出</h2>
+  <!-- ここから「確定支出・予想支出を登録する」ためのエリア -->
+  <section id="recurring-section">
+    <h2>確定支出・予想支出</h2>
 
-      <div>
-        <label for="recurring-name-input">名称：</label>
-        <input type="text" id="recurring-name-input" placeholder="例：家賃">
-      </div>
+    <div>
+      <label for="recurring-type-select">種類：</label>
+      <select id="recurring-type-select">
+        <option value="fixed">金額が確定している（確定支出）</option>
+        <option value="estimated">金額が変動する（予想支出）</option>
+      </select>
+    </div>
 
-      <div>
-        <label for="recurring-amount-input">金額：</label>
-        <input type="number" id="recurring-amount-input" placeholder="金額を入力">
-      </div>
+    <div id="recurring-name-row">
+      <label for="recurring-name-input">名称：</label>
+      <input type="text" id="recurring-name-input" placeholder="例：家賃">
+    </div>
 
-      <div>
-        <label for="recurring-day-input">引き落とし日：</label>
-        <input type="number" id="recurring-day-input" min="1" max="31" placeholder="1〜31">
-      </div>
+    <div>
+      <label for="recurring-amount-input" id="recurring-amount-label">金額：</label>
+      <input type="number" id="recurring-amount-input" placeholder="金額を入力">
+    </div>
 
-      <div>
-        <label for="recurring-category">カテゴリ：</label>
-        <!-- 定期支出専用の固定選択肢。支出登録の8カテゴリとは別物 -->
-        <select id="recurring-category">
-          <option value="">選択してください</option>
-          <option value="家賃">家賃</option>
-          <option value="サブスク">サブスク</option>
-          <option value="ペット保険">ペット保険</option>
-        </select>
-      </div>
+    <div id="recurring-day-row">
+      <label for="recurring-day-input">引き落とし日：</label>
+      <input type="number" id="recurring-day-input" min="1" max="31" placeholder="1〜31">
+    </div>
 
-      <button id="save-recurring-button">定期支出を登録</button>
-      <button id="cancel-recurring-edit-button" style="display:none;">キャンセル</button>
+    <div>
+      <label for="recurring-category">カテゴリ：</label>
+      <!-- 選択肢は「種類」に応じてscript.jsが自動的に作り直す -->
+      <select id="recurring-category"></select>
+    </div>
 
-      <h3>登録済みの定期支出</h3>
-      <ul id="recurring-list"></ul>
-    </section>
+    <div id="recurring-cycle-row" style="display:none;">
+      <label for="recurring-cycle-select">支払いサイクル：</label>
+      <select id="recurring-cycle-select">
+        <option value="1">毎月</option>
+        <option value="2">2か月ごと</option>
+        <option value="3">3か月ごと</option>
+      </select>
+    </div>
+
+    <button id="save-recurring-button">確定支出を登録</button>
+    <button id="cancel-recurring-edit-button" style="display:none;">キャンセル</button>
+
+    <h3>登録済みの確定支出</h3>
+    <ul id="recurring-list"></ul>
+
+    <h3>登録済みの予想支出</h3>
+    <ul id="estimated-list"></ul>
+  </section>
 
   </div>
 
