@@ -152,6 +152,20 @@ function loadData() {
     }
   });
 
+  // 「ペット保険」というカテゴリ名を「保険」に変更したことに伴い、
+  // 古いデータに残っている表記を新しい名称に合わせる
+  data.recurringExpenses.forEach(function (recurring) {
+    if (recurring.category === "ペット保険") {
+      recurring.category = "保険";
+    }
+  });
+
+  data.expenses.forEach(function (expense) {
+    if (expense.categoryMain === "ペット保険") {
+      expense.categoryMain = "保険";
+    }
+  });
+
   return data;
 }
 
@@ -319,6 +333,10 @@ const CATEGORY_MAP = {
   "🎮 娯楽": ["ゲーム", "映画", "本"],
   "📦 その他": ["交通費", "衣類", "プレゼント", "教育", "美容", "交際費", "家具/家電", "特別支出","返済"]
 };
+
+// 確定支出専用の固定カテゴリ一覧（登録フォーム・確定支出一覧・履歴画面の3箇所で共通して使う）
+// 1箇所だけ書き換えて他を直し忘れる、というミスを防ぐため、あえて共通の定数にしている
+const RECURRING_EXPENSE_CATEGORIES = ["家賃", "サブスク", "保険"];
 
 // 「今週使える目安」の週予算には含めず、残高から直接引くだけにするカテゴリの一覧
 // （金額が大きく・不定期に発生するカテゴリをここに追加していく）
@@ -524,66 +542,138 @@ function renderCalendar(data) {
 }
 
 
-// 指定した日付の支出・収入の詳細を表示する関数
+// 支出1件分の<li>要素を作る関数（履歴の日付詳細パネルで使う）
+// カテゴリ・内訳は見出し側（呼び出し元）で表示するので、ここでは金額とメモだけを表示する
+function createExpenseDetailListItem(expense) {
+  const itemElement = document.createElement("li");
+
+  const textElement = document.createElement("span");
+  let text = expense.amount.toLocaleString() + "円";
+  if (expense.memo !== "") {
+    text += "／" + expense.memo;
+  }
+  textElement.textContent = text;
+
+  const editButton = document.createElement("button");
+  editButton.textContent = "編集";
+  editButton.className = "expense-edit-button";
+  editButton.addEventListener("click", function () {
+    startEditingExpense(expense.id);
+  });
+
+  const deleteButton = document.createElement("button");
+  deleteButton.textContent = "削除";
+  deleteButton.className = "expense-delete-button";
+  deleteButton.addEventListener("click", function () {
+    deleteExpense(expense.id);
+  });
+
+  itemElement.appendChild(textElement);
+  itemElement.appendChild(editButton);
+  itemElement.appendChild(deleteButton);
+
+  return itemElement;
+}
+
+
 function showDayDetail(dateString, data) {
   const detailSection = document.getElementById("day-detail-section");
   const titleElement = document.getElementById("day-detail-title");
-  const expenseListElement = document.getElementById("day-detail-expense-list");
+  const expenseContainerElement = document.getElementById("day-detail-expense-list");
   const incomeListElement = document.getElementById("day-detail-income-list");
 
   titleElement.textContent = formatDateJapanese(dateString);
 
-  // --- 支出のリストを作る ---
-  expenseListElement.innerHTML = "";
+  // --- 支出のリストを作る（カテゴリ→内訳の階層で表示する） ---
+  expenseContainerElement.innerHTML = "";
 
   const dayExpenses = data.expenses.filter(function (expense) {
     return expense.date === dateString;
   });
 
   if (dayExpenses.length === 0) {
-    const emptyItem = document.createElement("li");
-    emptyItem.textContent = "この日の支出はありません";
-    expenseListElement.appendChild(emptyItem);
+    const emptyMessage = document.createElement("p");
+    emptyMessage.textContent = "この日の支出はありません";
+    expenseContainerElement.appendChild(emptyMessage);
   } else {
-    dayExpenses.forEach(function (expense) {
-      const itemElement = document.createElement("li");
-
-      // 支出の内容を表示するテキスト部分
-      const textElement = document.createElement("span");
-      let text = expense.categoryMain;
-      if (expense.categorySub !== "") {
-        text += " - " + expense.categorySub;
-      }
-      text += "／" + expense.amount.toLocaleString() + "円";
-      if (expense.memo !== "") {
-        text += "／" + expense.memo;
-      }
-      textElement.textContent = text;
-
-      // 編集ボタン（このボタンだけの支出IDを覚えておくため、クロージャで expense.id を使う）
-      const editButton = document.createElement("button");
-      editButton.textContent = "編集";
-      editButton.className = "expense-edit-button";
-      editButton.addEventListener("click", function () {
-        startEditingExpense(expense.id);
+    // CATEGORY_MAPに定義されている順番で、カテゴリ（第一階層）ごとにグループ分けする
+    for (const categoryMain in CATEGORY_MAP) {
+      const itemsInCategory = dayExpenses.filter(function (expense) {
+        return expense.categoryMain === categoryMain;
       });
 
-      // 削除ボタン
-      const deleteButton = document.createElement("button");
-      deleteButton.textContent = "削除";
-      deleteButton.className = "expense-delete-button";
-      deleteButton.addEventListener("click", function () {
-        deleteExpense(expense.id);
+      // このカテゴリに該当する支出が無ければ、見出しごと表示しない
+      if (itemsInCategory.length === 0) {
+        continue;
+      }
+
+      // カテゴリの見出し（第一階層）を追加する
+      const categoryHeadingElement = document.createElement("h4");
+      categoryHeadingElement.textContent = categoryMain;
+      expenseContainerElement.appendChild(categoryHeadingElement);
+
+      // 内訳（第二階層）を選んでいない支出は、見出し無しでカテゴリの直下に並べる
+      const itemsWithoutSub = itemsInCategory.filter(function (expense) {
+        return expense.categorySub === "";
       });
 
-      itemElement.appendChild(textElement);
-      itemElement.appendChild(editButton);
-      itemElement.appendChild(deleteButton);
-      expenseListElement.appendChild(itemElement);
+      if (itemsWithoutSub.length > 0) {
+        const noSubListElement = document.createElement("ul");
+        itemsWithoutSub.forEach(function (expense) {
+          noSubListElement.appendChild(createExpenseDetailListItem(expense));
+        });
+        expenseContainerElement.appendChild(noSubListElement);
+      }
+
+      // 内訳（第二階層）ごとにグループ分けする（CATEGORY_MAPの並び順に沿う）
+      const subCategoryList = CATEGORY_MAP[categoryMain];
+      subCategoryList.forEach(function (categorySub) {
+        const itemsInSub = itemsInCategory.filter(function (expense) {
+          return expense.categorySub === categorySub;
+        });
+
+        if (itemsInSub.length === 0) {
+          return;
+        }
+
+        const subHeadingElement = document.createElement("h5");
+        subHeadingElement.textContent = categorySub;
+        expenseContainerElement.appendChild(subHeadingElement);
+
+              const subListElement = document.createElement("ul");
+        itemsInSub.forEach(function (expense) {
+          subListElement.appendChild(createExpenseDetailListItem(expense));
+        });
+        expenseContainerElement.appendChild(subListElement);
+      });
+    }
+
+    // --- 確定支出（家賃・サブスク・ペット保険）から自動生成された支出は、
+    //     CATEGORY_MAPには載っていないカテゴリ名なので、ここで別途表示する ---
+    const recurringOriginCategories = RECURRING_EXPENSE_CATEGORIES;
+
+    recurringOriginCategories.forEach(function (categoryMain) {
+      const itemsInCategory = dayExpenses.filter(function (expense) {
+        return expense.categoryMain === categoryMain;
+      });
+
+      if (itemsInCategory.length === 0) {
+        return;
+      }
+
+      const categoryHeadingElement = document.createElement("h4");
+      categoryHeadingElement.textContent = categoryMain;
+      expenseContainerElement.appendChild(categoryHeadingElement);
+
+      const listElement = document.createElement("ul");
+      itemsInCategory.forEach(function (expense) {
+        listElement.appendChild(createExpenseDetailListItem(expense));
+      });
+      expenseContainerElement.appendChild(listElement);
     });
   }
 
-  // --- 収入のリストを作る ---
+  // --- 収入のリストを作る（今まで通り、フラットな一覧） ---
   incomeListElement.innerHTML = "";
 
   const dayIncomes = data.incomes.filter(function (income) {
@@ -1239,7 +1329,7 @@ function updateRecurringCategoryOptions(type) {
 
   const categoryList = (type === "estimated")
     ? ESTIMATED_EXPENSE_CATEGORIES
-    : ["家賃", "サブスク", "ペット保険"];
+    : RECURRING_EXPENSE_CATEGORIES;
 
   categoryList.forEach(function (categoryName) {
     const optionElement = document.createElement("option");
@@ -1430,38 +1520,67 @@ function processRecurringExpenses(data) {
   return didGenerate;
 }
 
-
-// 登録済みの確定支出一覧を画面に表示する関数
+// 登録済みの確定支出一覧を、カテゴリごとにグループ分けして画面に表示する関数
+// 各カテゴリの中では、引き落とし日が早い順に並べる
 function renderRecurringList(data) {
-  const listElement = document.getElementById("recurring-list");
-  listElement.innerHTML = "";
+  const containerElement = document.getElementById("recurring-list");
+  containerElement.innerHTML = "";
 
-  data.recurringExpenses.forEach(function (recurring) {
-    const itemElement = document.createElement("li");
+  // カテゴリは、登録フォームの選択肢と同じ順番で固定しておく
+  const categoryOrder = RECURRING_EXPENSE_CATEGORIES;
 
-    const textElement = document.createElement("span");
-    const text = recurring.name + "／毎月" + recurring.dayOfMonth + "日／" +
-      recurring.amount.toLocaleString() + "円／" + recurring.category;
-    textElement.textContent = text;
-
-    const editButton = document.createElement("button");
-    editButton.textContent = "編集";
-    editButton.className = "recurring-edit-button";
-    editButton.addEventListener("click", function () {
-      startEditingRecurringExpense(recurring.id);
+  categoryOrder.forEach(function (categoryName) {
+    // このカテゴリに属する確定支出だけを取り出す
+    const itemsInCategory = data.recurringExpenses.filter(function (recurring) {
+      return recurring.category === categoryName;
     });
 
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "削除";
-    deleteButton.className = "recurring-delete-button";
-    deleteButton.addEventListener("click", function () {
-      deleteRecurringExpense(recurring.id);
+    // このカテゴリに1件も登録が無ければ、見出しごと表示しない
+    if (itemsInCategory.length === 0) {
+      return;
+    }
+
+    // 引き落とし日が早い順に並び替える（元の配列を壊さないようにslice()でコピーしてから）
+    const sortedItems = itemsInCategory.slice().sort(function (a, b) {
+      return a.dayOfMonth - b.dayOfMonth;
     });
 
-    itemElement.appendChild(textElement);
-    itemElement.appendChild(editButton);
-    itemElement.appendChild(deleteButton);
-    listElement.appendChild(itemElement);
+    // カテゴリの見出しを追加する
+    const headingElement = document.createElement("h4");
+    headingElement.textContent = categoryName;
+    containerElement.appendChild(headingElement);
+
+    // このカテゴリの一覧（ul）を作る
+    const listElement = document.createElement("ul");
+
+    sortedItems.forEach(function (recurring) {
+      const itemElement = document.createElement("li");
+
+      const textElement = document.createElement("span");
+      textElement.textContent = recurring.name + "／毎月" + recurring.dayOfMonth + "日／" +
+        recurring.amount.toLocaleString() + "円";
+      itemElement.appendChild(textElement);
+
+      const editButton = document.createElement("button");
+      editButton.textContent = "編集";
+      editButton.className = "recurring-edit-button";
+      editButton.addEventListener("click", function () {
+        startEditingRecurringExpense(recurring.id);
+      });
+      itemElement.appendChild(editButton);
+
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "削除";
+      deleteButton.className = "recurring-delete-button";
+      deleteButton.addEventListener("click", function () {
+        deleteRecurringExpense(recurring.id);
+      });
+      itemElement.appendChild(deleteButton);
+
+      listElement.appendChild(itemElement);
+    });
+
+    containerElement.appendChild(listElement);
   });
 }
 

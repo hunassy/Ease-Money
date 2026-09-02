@@ -420,13 +420,11 @@ body {
   margin-top: 5px;
 }
 
-/* 登録済みの確定支出一覧 */
-#recurring-list,
+/* 登録済みの予想支出一覧 */
 #estimated-list {
   padding-left: 20px;
 }
 
-#recurring-list li,
 #estimated-list li {
   display: flex;
   align-items: center;
@@ -435,8 +433,30 @@ body {
   margin-bottom: 6px;
 }
 
-#recurring-list li span,
 #estimated-list li .estimated-item-content {
+  flex: 1;
+}
+
+/* 登録済みの確定支出一覧（カテゴリごとにグループ分けして表示） */
+#recurring-list h4 {
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+#recurring-list ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+#recurring-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+#recurring-list li span {
   flex: 1;
 }
 
@@ -620,4 +640,54 @@ select {
   font-size: 13px;
   cursor: pointer;
   margin-bottom: 10px;
+}
+
+
+/* 履歴：日付詳細パネルの支出一覧（カテゴリ→内訳の階層表示） */
+#day-detail-expense-list h4 {
+  margin-top: 10px;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+#day-detail-expense-list h5 {
+  margin-top: 6px;
+  margin-bottom: 2px;
+  margin-left: 10px;
+  font-size: 12px;
+  color: #777777;
+}
+
+#day-detail-expense-list ul {
+  padding-left: 20px;
+  margin: 0 0 6px 0;
+}
+
+#day-detail-expense-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+#day-detail-expense-list li span {
+  flex: 1;
+}
+
+/* 履歴：日付詳細パネルの収入一覧（今まで通りフラットな一覧） */
+#day-detail-income-list {
+  padding-left: 20px;
+}
+
+#day-detail-income-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+#day-detail-income-list li span {
+  flex: 1;
 }
