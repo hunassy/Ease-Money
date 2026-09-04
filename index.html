@@ -260,12 +260,28 @@
       </div>
 
       <!-- 日付をタップすると、その日の支出・収入の詳細がここに表示される -->
+      <!-- ポップアップの背景（クリックすると閉じる） -->
+      <div id="day-detail-backdrop" style="display:none;"></div>
+
       <div id="day-detail-section" style="display:none;">
-        <h3 id="day-detail-title"></h3>
-        <h4>支出</h4>
-        <div id="day-detail-expense-list"></div>
-        <h4>収入</h4>
-        <ul id="day-detail-income-list"></ul>
+        <!-- 「✕」だけの行。編集・削除ボタンとは別の行にすることで、絶対配置を使わず重なりを防ぐ -->
+        <div id="day-detail-close-row">
+          <button id="day-detail-close-button">✕</button>
+        </div>
+        <!-- 中身が多い日でも、ここだけが縦スクロールする -->
+        <div id="day-detail-scroll-area">
+          <div id="day-detail-header">
+            <h3 id="day-detail-title"></h3>
+            <div id="day-detail-toggle-buttons">
+              <button id="day-detail-edit-toggle-button">編集</button>
+              <button id="day-detail-delete-toggle-button">削除</button>
+            </div>
+          </div>
+          <h4 id="day-detail-expense-heading">支出</h4>
+          <div id="day-detail-expense-list"></div>
+          <h4 id="day-detail-income-heading">収入</h4>
+          <ul id="day-detail-income-list"></ul>
+        </div>
       </div>
     </section>
 

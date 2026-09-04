@@ -434,6 +434,13 @@ let calendarMonth; // 0=1月, 11=12月（JavaScriptのDateの数え方に合わ�
 // 現在編集中の支出のID番号。編集していないときは null
 let editingExpenseId = null;
 
+// 履歴画面：日付詳細パネルで「編集」「削除」ボタンを表示するかどうかの状態
+// （通常は非表示にしておき、ボタンを押したときだけ表示する）
+let dayDetailEditMode = false;
+let dayDetailDeleteMode = false;
+
+// 現在、日付詳細パネルに表示している日付。別の日付に切り替わったときの判定に使う
+let currentDayDetailDate = null;
 
 // カレンダーを組み立てて画面に表示する関数
 function renderCalendar(data) {
@@ -538,7 +545,7 @@ function renderCalendar(data) {
   document.getElementById("month-income-total-display").textContent = monthIncomeTotal.toLocaleString() + "円";
 
   // 月を切り替えたときに、前の月で開いていた詳細表示は閉じておく
-  document.getElementById("day-detail-section").style.display = "none";
+  closeDayDetail();
 }
 
 
@@ -553,30 +560,43 @@ function createExpenseDetailListItem(expense) {
     text += "／" + expense.memo;
   }
   textElement.textContent = text;
-
-  const editButton = document.createElement("button");
-  editButton.textContent = "編集";
-  editButton.className = "expense-edit-button";
-  editButton.addEventListener("click", function () {
-    startEditingExpense(expense.id);
-  });
-
-  const deleteButton = document.createElement("button");
-  deleteButton.textContent = "削除";
-  deleteButton.className = "expense-delete-button";
-  deleteButton.addEventListener("click", function () {
-    deleteExpense(expense.id);
-  });
-
   itemElement.appendChild(textElement);
-  itemElement.appendChild(editButton);
-  itemElement.appendChild(deleteButton);
+
+  // 「編集」ボタンを押して編集モードのときだけ、編集ボタンを表示する
+  if (dayDetailEditMode) {
+    const editButton = document.createElement("button");
+    editButton.textContent = "編集";
+    editButton.className = "expense-edit-button";
+    editButton.addEventListener("click", function () {
+      startEditingExpense(expense.id);
+    });
+    itemElement.appendChild(editButton);
+  }
+
+  // 「削除」ボタンを押して削除モードのときだけ、削除ボタンを表示する
+  if (dayDetailDeleteMode) {
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "削除";
+    deleteButton.className = "expense-delete-button";
+    deleteButton.addEventListener("click", function () {
+      deleteExpense(expense.id);
+    });
+    itemElement.appendChild(deleteButton);
+  }
 
   return itemElement;
 }
 
 
 function showDayDetail(dateString, data) {
+  // 別の日付に切り替わったときだけ、編集・削除ボタンの表示状態を初期状態（非表示）に戻す
+  // （同じ日付のまま「編集」「削除」ボタンを押してこの関数が呼ばれた場合は、状態を維持する）
+  if (currentDayDetailDate !== dateString) {
+    dayDetailEditMode = false;
+    dayDetailDeleteMode = false;
+  }
+  currentDayDetailDate = dateString;
+
   const detailSection = document.getElementById("day-detail-section");
   const titleElement = document.getElementById("day-detail-title");
   const expenseContainerElement = document.getElementById("day-detail-expense-list");
@@ -694,29 +714,49 @@ function showDayDetail(dateString, data) {
         text += "／" + income.memo;
       }
       textElement.textContent = text;
-
-      const editButton = document.createElement("button");
-      editButton.textContent = "編集";
-      editButton.className = "income-edit-button";
-      editButton.addEventListener("click", function () {
-        startEditingIncome(income.id);
-      });
-
-      const deleteButton = document.createElement("button");
-      deleteButton.textContent = "削除";
-      deleteButton.className = "income-delete-button";
-      deleteButton.addEventListener("click", function () {
-        deleteIncome(income.id);
-      });
-
       itemElement.appendChild(textElement);
-      itemElement.appendChild(editButton);
-      itemElement.appendChild(deleteButton);
+
+      // 「編集」ボタンを押して編集モードのときだけ、編集ボタンを表示する
+      if (dayDetailEditMode) {
+        const editButton = document.createElement("button");
+        editButton.textContent = "編集";
+        editButton.className = "income-edit-button";
+        editButton.addEventListener("click", function () {
+          startEditingIncome(income.id);
+        });
+        itemElement.appendChild(editButton);
+      }
+
+      // 「削除」ボタンを押して削除モードのときだけ、削除ボタンを表示する
+      if (dayDetailDeleteMode) {
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "削除";
+        deleteButton.className = "income-delete-button";
+        deleteButton.addEventListener("click", function () {
+          deleteIncome(income.id);
+        });
+        itemElement.appendChild(deleteButton);
+      }
+
       incomeListElement.appendChild(itemElement);
     });
   }
 
   detailSection.style.display = "block";
+  document.getElementById("day-detail-backdrop").style.display = "block";
+}
+
+// 日付詳細のポップアップを閉じる関数
+// 「✕」ボタン、または背景（バックドロップ）がクリックされたときに呼ばれる
+function closeDayDetail() {
+  document.getElementById("day-detail-section").style.display = "none";
+  document.getElementById("day-detail-backdrop").style.display = "none";
+
+  // 閉じたので、編集・削除ボタンの表示状態もリセットしておく
+  // （次に別の日付を開いたときに、前回の状態が残らないようにするため）
+  currentDayDetailDate = null;
+  dayDetailEditMode = false;
+  dayDetailDeleteMode = false;
 }
 
 
@@ -1946,6 +1986,28 @@ window.onload = function () {
       calendarYear += 1;
     }
     renderCalendar(loadData());
+  });
+
+  // 「編集」ボタン：日付詳細パネルの編集ボタンをまとめて表示/非表示する
+  document.getElementById("day-detail-edit-toggle-button").addEventListener("click", function () {
+    dayDetailEditMode = !dayDetailEditMode;
+    showDayDetail(currentDayDetailDate, loadData());
+  });
+
+  // 「削除」ボタン：日付詳細パネルの削除ボタンをまとめて表示/非表示する
+  document.getElementById("day-detail-delete-toggle-button").addEventListener("click", function () {
+    dayDetailDeleteMode = !dayDetailDeleteMode;
+    showDayDetail(currentDayDetailDate, loadData());
+  });
+
+  // 「✕」ボタン：ポップアップを閉じる
+  document.getElementById("day-detail-close-button").addEventListener("click", function () {
+    closeDayDetail();
+  });
+
+  // 背景（バックドロップ）をタップしたときも、ポップアップを閉じる
+  document.getElementById("day-detail-backdrop").addEventListener("click", function () {
+    closeDayDetail();
   });
 
   // カテゴリの第一階層が変更されたら、第二階層の選択肢を作り直す（支出フォーム）

@@ -257,7 +257,7 @@ body {
 /* 履歴エリア全体 */
 #history-section {
   margin-top: 20px;
-  max-width: 400px;
+  max-width: 480px; /* カレンダーの日付マスに余裕を持たせるため、他の画面より少し広げている */
   margin-left: auto;
   margin-right: auto;
 }
@@ -300,7 +300,8 @@ body {
 
 /* 日付1マス分 */
 .calendar-day {
-  min-height: 50px;
+  height: 70px; /* min-heightではなくheightにすることで、内容量に関わらずマスの高さを固定する */
+  overflow: hidden; /* 万が一、文字が想定より多くてもマスからはみ出さないようにする */
   border: 1px solid #ddd;
   padding: 4px;
   font-size: 11px;
@@ -321,18 +322,23 @@ body {
 
 .calendar-day-number {
   font-weight: bold;
+  font-size: 12px;
 }
 
 /* その日の合計金額・件数（支出） */
 .calendar-day-info {
   color: #d9534f;
-  margin-top: 2px;
+  margin-top: 1px;
+  font-size: 9px;
+  line-height: 1.2;
 }
 
 /* その日の合計金額・件数（収入） */
 .calendar-day-income-info {
   color: #2E7D32;
-  margin-top: 2px;
+  margin-top: 1px;
+  font-size: 9px;
+  line-height: 1.2;
 }
 
 /* 今月の支出合計 */
@@ -690,4 +696,77 @@ select {
 
 #day-detail-income-list li span {
   flex: 1;
+}
+
+/* 履歴：日付詳細パネルの見出し行（日付とボタンを横並びにする） */
+#day-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#day-detail-toggle-buttons button {
+  font-size: 13px;
+  padding: 3px 10px;
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+/* 履歴：日付詳細パネルの「支出」「収入」を両方とも左寄せにする */
+#day-detail-expense-heading,
+#day-detail-expense-list,
+#day-detail-income-heading, 
+#day-detail-income-list {
+  text-align: left;
+}
+
+/* 履歴：日付詳細パネルをポップアップ（カレンダーより上面）にする */
+
+/* 背景を暗くする部分。画面全体を覆う */
+#day-detail-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 20; /* ヘッダー（z-index:10）より手前に表示する */
+}
+
+/* 詳細パネル本体を、画面の中央に固定表示する */
+#day-detail-section {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 21;
+
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  /* ここではoverflow-yを指定しない（✕ボタンが切り取られる原因になっていたため） */
+  /* スクロールは中の #day-detail-scroll-area だけで行う */
+
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* パネルの中身部分。ここだけを縦スクロールさせる */
+#day-detail-scroll-area {
+  max-height: calc(80vh - 40px); /* パネル全体の高さから、上下の余白分を差し引いておく */
+  overflow-y: auto;
+}
+
+/* 「✕」ボタンの行。右寄せにして、パネルの右上に自然に配置する（絶対配置は使わない） */
+#day-detail-close-row {
+  text-align: right;
+}
+
+/* 閉じる（✕）ボタン */
+#day-detail-close-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999999; /* 黒ではなく、控えめな灰色にする */
+  cursor: pointer;
+  padding: 0 4px;
 }
