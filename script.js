@@ -265,7 +265,6 @@ function updateBalanceDisplay(data) {
     ? "未登録"
     : data.currentBalance.toLocaleString() + " 円"; // toLocaleString()で数字に自動でカンマが付く
 
-  document.getElementById("balance-display").textContent = displayText;      // 設定画面
   document.getElementById("home-balance-display").textContent = displayText; // ホーム画面
 }
 
@@ -2014,47 +2013,6 @@ window.onload = function () {
   const categoryMainSelect = document.getElementById("expense-category-main");
   categoryMainSelect.addEventListener("change", function () {
     updateSubCategoryOptions(categoryMainSelect.value, "expense-category-sub");
-  });
-
-  // --- 「保存」ボタンが押されたときの処理を登録する ---
-  const saveButton = document.getElementById("save-balance-button");
-
-  saveButton.addEventListener("click", function () {
-    const inputElement = document.getElementById("balance-input");
-    const inputValue = inputElement.value;
-
-    // 入力チェック①：何も入力されていない場合は処理を止める
-    if (inputValue === "") {
-      alert("金額を入力してください");
-      return;
-    }
-
-    // 入力された文字列を数値に変換する
-    const amount = Number(inputValue);
-
-    // 入力チェック②：数値に変換できない場合は処理を止める
-    if (Number.isNaN(amount)) {
-      alert("正しい金額を入力してください");
-      return;
-    }
-
-    // 最新のデータを読み込み直してから更新する
-    // （画面を開いたままの古いデータを上書きしないようにするため）
-    const latestData = loadData();
-    latestData.initialBalance = amount;
-    latestData.currentBalance = amount;
-
-    // データを保存する
-    saveData(latestData);
-
-    // 画面の表示を更新する
-    updateBalanceDisplay(latestData);
-    updateWeeklySummaryDisplay(latestData);
-    updateLivingCostBalanceDisplay(latestData);
-    updateEstimatedReviewNotice(latestData);
-
-    // 入力欄を空にする
-    inputElement.value = "";
   });
 
   // --- 「残高を修正」ボタンが押されたときの処理を登録する ---
