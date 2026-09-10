@@ -361,6 +361,33 @@
 
   </div>
 
+  <!-- ============================================================ -->
+  <!-- 🔰 初期設定・収入日当日画面 -->
+  <!-- 「残高が未登録（初めて使うとき）」または「次回収入日が今日以前 -->
+  <!-- （収入日が来た・過ぎた）」のときに、起動時にこの画面を表示する -->
+  <!-- （表示するかどうかの判定処理は、まだscript.jsに書いていない） -->
+  <!-- ============================================================ -->
+  <div id="screen-setup" class="app-screen">
+
+    <section id="setup-section">
+      <h2>残高・次回収入日の登録</h2>
+      <p>現在の残高と、次回の収入日を入力してください。</p>
+
+      <div>
+        <label for="setup-balance-input">現在の残高：</label>
+        <input type="number" id="setup-balance-input" placeholder="金額を入力">
+      </div>
+
+      <div>
+        <label for="setup-income-date-input">次回収入日：</label>
+        <input type="date" id="setup-income-date-input">
+      </div>
+
+      <button id="setup-save-button">登録</button>
+    </section>
+
+  </div>
+
   <!-- 動作（JavaScript）はscript.jsに書く。bodyの一番下に置くのが基本 -->
   <script src="script.js"></script>
 </body>

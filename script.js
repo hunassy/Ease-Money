@@ -2461,15 +2461,115 @@ window.onload = function () {
     cancelEditingRecurringExpense();
   });
 
+  // --- 「初期設定・収入日当日画面」の「登録」ボタンが押されたときの処理を登録する ---
+  const setupSaveButton = document.getElementById("setup-save-button");
+
+  setupSaveButton.addEventListener("click", function () {
+    const balanceInput = document.getElementById("setup-balance-input");
+    const incomeDateInput = document.getElementById("setup-income-date-input");
+
+    const balanceInputValue = balanceInput.value;
+    const incomeDateValue = incomeDateInput.value;
+
+    // 入力チェック①：残高が未入力の場合は止める
+    if (balanceInputValue === "") {
+      alert("現在の残高を入力してください");
+      return;
+    }
+
+    const balanceAmount = Number(balanceInputValue);
+
+    // 入力チェック②：数値に変換できない場合は止める
+    if (Number.isNaN(balanceAmount)) {
+      alert("正しい金額を入力してください");
+      return;
+    }
+
+    // 入力チェック③：次回収入日が未入力の場合は止める
+    if (incomeDateValue === "") {
+      alert("次回収入日を選択してください");
+      return;
+    }
+
+    // 最新のデータを読み込み直してから更新する
+    const latestData = loadData();
+
+    // latestData.currentBalanceがnull → 初めての登録／それ以外 → 収入日当日の修正
+    if (latestData.currentBalance === null) {
+
+      // ---------------- 初めての登録（履歴には残さない） ----------------
+      latestData.initialBalance = balanceAmount;
+      latestData.currentBalance = balanceAmount;
+
+    } else {
+
+      // ---------------- 収入日当日の修正（修正履歴に記録を残す） ----------------
+      const oldBalance = latestData.currentBalance;
+
+      const newAdjustment = {
+        id: latestData.nextBalanceAdjustmentId,
+        date: getTodayDateString(),
+        oldBalance: oldBalance,
+        newBalance: balanceAmount
+      };
+      latestData.nextBalanceAdjustmentId += 1;
+      latestData.balanceAdjustments.push(newAdjustment);
+
+      latestData.currentBalance = balanceAmount;
+    }
+
+    // 次回収入日は、初めての登録・修正どちらの場合も上書きする
+    latestData.nextIncomeDate = incomeDateValue;
+
+    saveData(latestData);
+
+    // 画面の表示を更新する
+    updateBalanceDisplay(latestData);
+    updateIncomeDateDisplay(latestData);
+    updateWeeklySummaryDisplay(latestData);
+    updateLivingCostBalanceDisplay(latestData);
+    updateEstimatedReviewNotice(latestData);
+    renderBalanceAdjustmentList(latestData);
+
+    alert("登録しました");
+
+    // 登録が終わったら、ホーム画面に切り替える
+    showScreen("home");
+  });
+
   // --- 画面切り替えボタンの処理を登録する ---
-  // data-screen属性を持つボタンはすべて対象（下部ナビゲーションバー＋ホーム画面のショートカットボタン）
+  // data-screen属性を持つボタンはすべて対象（☰メニューの項目＋ホーム画面のショートカットボタン）
   document.querySelectorAll("[data-screen]").forEach(function (button) {
     button.addEventListener("click", function () {
       showScreen(button.dataset.screen);
     });
   });
 
-  // --- 最初に表示する画面を「ホーム」にする ---
-  showScreen("home");
+  // --- 最初に表示する画面を決める ---
+  // 「残高も次回収入日も未登録（初めて使うとき）」または
+  // 「次回収入日が今日以前（収入日が来た・過ぎた）」のときは、
+  // ホーム画面の代わりに「初期設定・収入日当日画面」を最初に表示する
+  const isFirstTime = (data.currentBalance === null && data.nextIncomeDate === null);
+
+  let isIncomeDayOrPast = false;
+  if (data.nextIncomeDate !== null) {
+    const todayForSetupCheck = parseDateString(getTodayDateString());
+    const nextIncomeForSetupCheck = parseDateString(data.nextIncomeDate);
+    isIncomeDayOrPast = (nextIncomeForSetupCheck <= todayForSetupCheck);
+  }
+
+  if (isFirstTime || isIncomeDayOrPast) {
+    // 収入日当日・経過の場合は、今の残高・次回収入日を入力欄にあらかじめ表示しておく
+    // （初めて使うときは、まだ値が無いので空欄のままになる）
+    if (data.currentBalance !== null) {
+      document.getElementById("setup-balance-input").value = data.currentBalance;
+    }
+    if (data.nextIncomeDate !== null) {
+      document.getElementById("setup-income-date-input").value = data.nextIncomeDate;
+    }
+    showScreen("setup");
+  } else {
+    showScreen("home");
+  }
 
 };

@@ -770,3 +770,33 @@ select {
   cursor: pointer;
   padding: 0 4px;
 }
+
+/* ============================================================ */
+/* 🔰 初期設定・収入日当日画面 */
+/* ============================================================ */
+
+/* 登録エリア全体（他の登録フォームと同じ見た目に揃える） */
+#setup-section {
+  margin-top: 20px;
+  text-align: left;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#setup-section div {
+  margin-bottom: 10px;
+}
+
+#setup-section label {
+  display: block;
+  width: auto;
+  margin-bottom: 4px;
+}
+
+#setup-save-button {
+  font-size: 16px;
+  padding: 5px 15px;
+  cursor: pointer;
+  margin-top: 5px;
+}
