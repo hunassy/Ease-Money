@@ -2088,14 +2088,29 @@ window.onload = function () {
     updateEstimatedReviewNotice(latestData);
     renderBalanceAdjustmentList(latestData);
 
+    // 生活費残高（次回収入日までに使える金額）を、
+    // 画面にすでに表示されている文字列からそのまま読み取る
+    // （updateLivingCostBalanceDisplay()の中で計算済みなので、ここで計算をやり直さない）
+    const livingCostDetailsElement = document.getElementById("living-cost-balance-details");
+    let livingCostMessage = "";
+
+    if (livingCostDetailsElement.style.display !== "none") {
+      const livingCostBalanceText = document.getElementById("living-cost-balance-display").textContent;
+      livingCostMessage = "生活費残高：" + livingCostBalanceText + "\n";
+    }
+
     alert(
       "残高を修正しました\n" +
       "現在の残高：" + newBalance.toLocaleString() + "円\n" +
-      "（今週の利用状況の欄も更新されました）"
+      livingCostMessage +
+      "ホーム画面に戻ります"
     );
 
     // 入力欄を空にする
     adjustmentInput.value = "";
+
+    // 修正が終わったら、設計書の仕様に合わせてホーム画面に戻る
+    showScreen("home");
   });
 
   // --- 「次回収入日を保存」ボタンが押されたときの処理を登録する ---
