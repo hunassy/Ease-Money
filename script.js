@@ -166,6 +166,25 @@ function loadData() {
     }
   });
 
+  // 【マイグレーション】支出カテゴリの表記から絵文字を削除したことに伴い、
+  // 古いデータに残っている絵文字付きの表記を、新しい絵文字なしの名称に変換する
+  const OLD_CATEGORY_NAME_MAP = {
+    "🍚 食費": "食費",
+    "🧻 日用品": "日用品",
+    "💡 光熱費": "光熱費",
+    "📱 通信": "通信",
+    "🏥 医療": "医療",
+    "🐶 ペット": "ペット",
+    "🎮 娯楽": "娯楽",
+    "📦 その他": "その他"
+  };
+
+  data.expenses.forEach(function (expense) {
+    if (OLD_CATEGORY_NAME_MAP[expense.categoryMain] !== undefined) {
+      expense.categoryMain = OLD_CATEGORY_NAME_MAP[expense.categoryMain];
+    }
+  });
+
   return data;
 }
 
@@ -323,14 +342,14 @@ function updateIncomeDateDisplay(data) {
 // 第二階層が無いカテゴリ（日用品）は空の配列 [] にしてある。
 // ============================================================
 const CATEGORY_MAP = {
-  "🍚 食費": ["食料品", "外食", "デリバリー"],
-  "🧻 日用品": [],
-  "💡 光熱費": ["水道", "ガス", "電気"],
-  "📱 通信": ["機種代", "回線代", "WiFi代"],
-  "🏥 医療": ["病院代", "薬代", "医薬品代"],
-  "🐶 ペット": ["日用品", "病院", "トリミング"],
-  "🎮 娯楽": ["ゲーム", "映画", "本"],
-  "📦 その他": ["交通費", "衣類", "プレゼント", "教育", "美容", "交際費", "家具/家電", "特別支出","返済"]
+  "食費": ["食料品", "外食", "デリバリー"],
+  "日用品": [],
+  "光熱費": ["水道", "ガス", "電気"],
+  "通信": ["機種代", "回線代", "WiFi代"],
+  "医療": ["病院代", "薬代", "医薬品代"],
+  "ペット": ["日用品", "病院", "トリミング"],
+  "娯楽": ["ゲーム", "映画", "本"],
+  "その他": ["交通費", "衣類", "プレゼント", "教育", "美容", "交際費", "家具/家電", "特別支出","返済"]
 };
 
 // 確定支出専用の固定カテゴリ一覧（登録フォーム・確定支出一覧・履歴画面の3箇所で共通して使う）
@@ -339,7 +358,7 @@ const RECURRING_EXPENSE_CATEGORIES = ["家賃", "サブスク", "保険"];
 
 // 「今週使える目安」の週予算には含めず、残高から直接引くだけにするカテゴリの一覧
 // （金額が大きく・不定期に発生するカテゴリをここに追加していく）
-const WEEKLY_BUDGET_EXCLUDED_CATEGORIES = ["💡 光熱費", "📱 通信"];
+const WEEKLY_BUDGET_EXCLUDED_CATEGORIES = ["光熱費", "通信"];
 
 // 予想支出（支払うことは決まっているが、金額が変動するもの）のカテゴリ一覧
 const ESTIMATED_EXPENSE_CATEGORIES = ["電気", "ガス", "水道", "機種", "回線", "WiFi"];
@@ -347,12 +366,12 @@ const ESTIMATED_EXPENSE_CATEGORIES = ["電気", "ガス", "水道", "機種", "�
 // 予想支出のカテゴリ名と、実績支出側のカテゴリ（メイン・内訳）の対応表
 // 生活費残高の計算で、「このカテゴリの実績が今月すでに記録されているか」を調べるために使う
 const ESTIMATED_EXPENSE_CATEGORY_MAP = {
-  "電気": { categoryMain: "💡 光熱費", categorySub: "電気" },
-  "ガス": { categoryMain: "💡 光熱費", categorySub: "ガス" },
-  "水道": { categoryMain: "💡 光熱費", categorySub: "水道" },
-  "機種": { categoryMain: "📱 通信", categorySub: "機種代" },
-  "回線": { categoryMain: "📱 通信", categorySub: "回線代" },
-  "WiFi": { categoryMain: "📱 通信", categorySub: "WiFi代" }
+  "電気": { categoryMain: "光熱費", categorySub: "電気" },
+  "ガス": { categoryMain: "光熱費", categorySub: "ガス" },
+  "水道": { categoryMain: "光熱費", categorySub: "水道" },
+  "機種": { categoryMain: "通信", categorySub: "機種代" },
+  "回線": { categoryMain: "通信", categorySub: "回線代" },
+  "WiFi": { categoryMain: "通信", categorySub: "WiFi代" }
 };
 
 // 支払いサイクル（cycleMonths）の数字を、画面表示用の文字に変換する対応表

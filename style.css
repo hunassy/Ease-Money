@@ -600,6 +600,11 @@ select {
   padding: 8px;
 }
 
+/* カテゴリの2つのプルダウン（メイン・サブ）の間に余白を作る */
+#expense-category-main {
+  margin-bottom: 4px;
+}
+
 /* ラベルと入力欄を横並びではなく縦並びにする（横幅いっぱいの入力欄と相性が良いため） */
 #expense-section label,
 #income-entry-section label,
