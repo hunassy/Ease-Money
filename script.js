@@ -35,7 +35,8 @@ function showScreen(screenName) {
   }
 
   // 画面を切り替えたら、開いていたメニューがあれば自動で閉じる
-  document.getElementById("side-menu").style.display = "none";
+  document.getElementById("side-menu").classList.remove("side-menu-open");
+  document.getElementById("side-menu-backdrop").style.display = "none";
 
   // 下部ナビゲーションバーのボタンも、今の画面に合わせて強調表示を切り替える
   document.querySelectorAll("#app-nav .nav-button").forEach(function (button) {
@@ -2156,16 +2157,34 @@ window.onload = function () {
   // --- 「支出を登録」ボタンが押されたときの処理を登録する ---
   const saveExpenseButton = document.getElementById("save-expense-button");
 
-  // --- ☰アイコンが押されたら、メニューの表示・非表示を切り替える ---
+  // --- ☰アイコンが押されたら、メニューをスライドイン／アウトで開閉する ---
   const openMenuButton = document.getElementById("open-menu-button");
   const sideMenu = document.getElementById("side-menu");
+  const sideMenuBackdrop = document.getElementById("side-menu-backdrop");
+
+  // メニューを開く関数（パネルをスライドインさせ、背景も暗くする）
+  function openSideMenu() {
+    sideMenu.classList.add("side-menu-open");
+    sideMenuBackdrop.style.display = "block";
+  }
+
+  // メニューを閉じる関数
+  function closeSideMenu() {
+    sideMenu.classList.remove("side-menu-open");
+    sideMenuBackdrop.style.display = "none";
+  }
 
   openMenuButton.addEventListener("click", function () {
-    if (sideMenu.style.display === "none") {
-      sideMenu.style.display = "block";
+    if (sideMenu.classList.contains("side-menu-open")) {
+      closeSideMenu();
     } else {
-      sideMenu.style.display = "none";
+      openSideMenu();
     }
+  });
+
+  // 背景（バックドロップ）をタップしたときも、メニューを閉じる
+  sideMenuBackdrop.addEventListener("click", function () {
+    closeSideMenu();
   });
 
   saveExpenseButton.addEventListener("click", function () {

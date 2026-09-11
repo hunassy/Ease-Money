@@ -551,25 +551,57 @@ body {
   padding: 4px 8px;
 }
 
-/* ☰を押すと出てくる簡易メニュー */
+/* ============================================================ */
+/* ☰メニュー（画面に重なるスライドインパネルに変更） */
+/* ============================================================ */
+
+/* 背景を暗くする部分。画面全体を覆う */
+#side-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 30; /* ヘッダー（z-index:10）より手前に表示する */
+}
+
+/* メニュー本体。普段は画面の左外側に隠しておき、開いたときだけスライドしてくる */
 #side-menu {
-  max-width: 250px;
-  margin: 10px auto 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 250px;
+  max-width: 80%; /* 画面の狭いiPhoneでも、メニューが画面を覆いすぎないようにする */
+
   background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+
+  z-index: 31; /* 背景（z-index:30）より、さらに手前に表示する */
+
+  /* 普段は画面の左外側に隠しておく */
+  transform: translateX(-100%);
+  /* transformが変化するときに、ふわっと動くようにする */
+  transition: transform 0.25s ease;
+}
+
+/* JSで「side-menu-open」クラスが付いたときだけ、画面内にスライドして表示する */
+#side-menu.side-menu-open {
+  transform: translateX(0);
 }
 
 #side-menu button {
   display: block;
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   border: none;
   border-bottom: 1px solid #eeeeee;
   background: none;
   font-size: 15px;
-  text-align: center;
+  text-align: left; /* 縦に並ぶメニューなので、左寄せの方が見やすい */
+  padding-left: 20px;
   cursor: pointer;
 }
 

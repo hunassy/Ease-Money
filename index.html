@@ -19,8 +19,13 @@
   <!-- ここの文字は script.js が正しく動いていれば書き換わる -->
   <p id="status-message">読み込み中...</p>
 
-  <!-- ☰を押すと表示される簡易メニュー。普段は隠しておく -->
-  <div id="side-menu" style="display:none;">
+  <!-- ☰を押すと、画面に重なる形（レイヤー）でスライドインしてくるメニュー -->
+  <!-- 背景を暗くする部分。タップすると閉じる -->
+  <div id="side-menu-backdrop" style="display:none;"></div>
+
+  <!-- メニュー本体。普段は画面の左外側に隠れていて、開くとスライドしてくる -->
+  <!-- ※ day-detail-sectionとは違い、display:noneではなくCSSのtransform（位置移動）で隠す方式なので、ここではstyle="display:none;"を付けない -->
+  <div id="side-menu">
     <button data-screen="history">履歴</button>
     <button data-screen="recurring">確定支出の管理</button>
     <button data-screen="balance-adjustment">残高の修正</button>
