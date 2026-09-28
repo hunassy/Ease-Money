@@ -580,10 +580,21 @@ function createExpenseDetailListItem(expense) {
   const itemElement = document.createElement("li");
 
   const textElement = document.createElement("span");
+  const recurringPrefix = "（定期支出）";
   let text = expense.amount.toLocaleString() + "円";
-  if (expense.memo !== "") {
+
+  if (expense.memo.indexOf(recurringPrefix) === 0) {
+    // 確定支出から作られた支出：見出し側に「（定期支出）」と出るので、ここでは金額を表示する
+    // 名称がカテゴリ名と違う場合（例：サブスクのNetflix）だけ、区別できるよう名称を前に付ける
+    const recurringName = expense.memo.slice(recurringPrefix.length);
+    if (recurringName !== "" && recurringName !== expense.categoryMain) {
+      text = recurringName + "／" + text;
+    }
+  } else if (expense.memo !== "") {
+    // 通常の支出：今まで通り「金額／メモ」
     text += "／" + expense.memo;
   }
+
   textElement.textContent = text;
   itemElement.appendChild(textElement);
 
@@ -685,7 +696,7 @@ function showDayDetail(dateString, data) {
         subHeadingElement.textContent = categorySub;
         expenseContainerElement.appendChild(subHeadingElement);
 
-              const subListElement = document.createElement("ul");
+        const subListElement = document.createElement("ul");
         itemsInSub.forEach(function (expense) {
           subListElement.appendChild(createExpenseDetailListItem(expense));
         });
@@ -707,10 +718,11 @@ function showDayDetail(dateString, data) {
       }
 
       const categoryHeadingElement = document.createElement("h4");
-      categoryHeadingElement.textContent = categoryMain;
+      categoryHeadingElement.textContent = categoryMain + "（定期支出）";
       expenseContainerElement.appendChild(categoryHeadingElement);
 
       const listElement = document.createElement("ul");
+
       itemsInCategory.forEach(function (expense) {
         listElement.appendChild(createExpenseDetailListItem(expense));
       });
@@ -1622,8 +1634,16 @@ function renderRecurringList(data) {
       const itemElement = document.createElement("li");
 
       const textElement = document.createElement("span");
-      textElement.textContent = recurring.name + "／毎月" + recurring.dayOfMonth + "日／" +
-        recurring.amount.toLocaleString() + "円";
+
+      // 「毎月〇日／金額／名称」の順に表示する
+      let text = "毎月" + recurring.dayOfMonth + "日／" + recurring.amount.toLocaleString() + "円";
+
+      // 名称がカテゴリ名と同じ場合（見出しと重複する場合）は、名称を省略する
+      if (recurring.name !== "" && recurring.name !== recurring.category) {
+        text += "／" + recurring.name;
+      }
+
+      textElement.textContent = text;
       itemElement.appendChild(textElement);
 
       const editButton = document.createElement("button");
@@ -1714,16 +1734,13 @@ function saveFixedRecurringExpenseForm() {
   const dayInput = document.getElementById("recurring-day-input");
   const categoryInput = document.getElementById("recurring-category");
 
-  const nameValue = nameInput.value;
   const amountValue = Number(amountInput.value);
   const dayValue = Number(dayInput.value);
   const categoryValue = categoryInput.value;
 
-  // 入力チェック①：名称が空の場合は止める
-  if (nameValue === "") {
-    alert("名称を入力してください");
-    return;
-  }
+  // 名称は任意。未入力の場合は、カテゴリ名（家賃など）をそのまま名称として使う
+  // （名称が空のままだと、確定支出の一覧や履歴の表示が空欄になってしまうため）
+  const nameValue = nameInput.value.trim() === "" ? categoryValue : nameInput.value;
 
   // 入力チェック②：金額が0円以下、または未入力（NaN）の場合は止める
   if (amountInput.value === "" || Number.isNaN(amountValue) || amountValue <= 0) {
