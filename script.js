@@ -49,6 +49,12 @@ function showScreen(screenName) {
 
   // 画面を切り替えたら、ページの一番上にスクロールし直す
   window.scrollTo(0, 0);
+
+  // 支出画面を「新規登録」で開いたときだけ、金額入力欄にカーソルを置く（数字キーボードが出る）
+  // 編集中（editingExpenseIdがnullでないとき）は、日付や金額を見直すことが多いので、フォーカスしない
+  if (screenName === "expense" && editingExpenseId === null) {
+    document.getElementById("expense-amount-input").focus();
+  }
 }
 
 // データを読み込む関数
