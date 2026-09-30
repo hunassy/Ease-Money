@@ -27,6 +27,7 @@
   <!-- ※ day-detail-sectionとは違い、display:noneではなくCSSのtransform（位置移動）で隠す方式なので、ここではstyle="display:none;"を付けない -->
   <div id="side-menu">
     <button data-screen="history">履歴</button>
+    <button data-screen="chart">月別グラフ</button>
     <button data-screen="recurring">確定支出の管理</button>
     <button data-screen="balance-adjustment">残高の修正</button>
     <button data-screen="settings">設定</button>
@@ -349,6 +350,35 @@
 
   </div>
 
+  <!-- ============================================================ -->
+  <!-- 🥧 月別グラフ画面（月ごとの支出をカテゴリ別に円グラフで表示） -->
+  <!-- ============================================================ -->
+  <div id="screen-chart" class="app-screen">
+
+    <section id="chart-section">
+      <h2>月別の支出グラフ</h2>
+
+      <!-- 月を切り替えるためのヘッダー（履歴画面とは別の部品として独立させている） -->
+      <div id="chart-header">
+        <button id="chart-prev-month-button">＜</button>
+        <span id="chart-month-label"></span>
+        <button id="chart-next-month-button">＞</button>
+      </div>
+
+      <!-- 支出が1件も無い月に表示するメッセージ -->
+      <p id="chart-empty-message" style="display:none;">この月の支出はありません</p>
+
+      <!-- 円グラフ本体。色の指定はscript.jsが行う -->
+      <div id="chart-pie"></div>
+
+      <p id="chart-total-line">合計：<span id="chart-total-display">-</span></p>
+
+      <!-- カテゴリごとの金額・割合の一覧 -->
+      <ul id="chart-legend"></ul>
+    </section>
+
+  </div>
+  
   <!-- ============================================================ -->
   <!-- 🔰 初期設定・収入日当日画面 -->
   <!-- 「残高が未登録（初めて使うとき）」または「次回収入日が今日以前 -->

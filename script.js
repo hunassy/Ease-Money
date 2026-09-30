@@ -34,6 +34,12 @@ function showScreen(screenName) {
     renderEstimatedList(loadData());
   }
 
+  // 月別グラフ画面に切り替わるときは、最新の支出データでグラフを描き直す
+  // （他の画面で支出を登録・編集していても、この画面を開けば必ず最新になるようにするため）
+  if (screenName === "chart") {
+    renderExpenseChart(loadData());
+  }
+
   // 画面を切り替えたら、開いていたメニューがあれば自動で閉じる
   document.getElementById("side-menu").classList.remove("side-menu-open");
   document.getElementById("side-menu-backdrop").style.display = "none";
@@ -1327,6 +1333,117 @@ function updateLivingCostBalanceDisplay(data) {
 }
 
 // ============================================================
+// 【月別グラフ関連】
+// 選んだ月の支出を、カテゴリ（第一階層）ごとに集計して円グラフで表示する。
+// 円グラフはCSSの conic-gradient（扇形を色で塗り分ける機能）で描いている。
+// このグラフはデータを「読むだけ」で、保存データは一切変更しない。
+// ============================================================
+
+// 円グラフで使う色の一覧（カテゴリが多い順に、上から順番に割り当てる）
+const CHART_COLORS = [
+  "#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#EDC948",
+  "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC", "#86BCB6", "#D37295"
+];
+
+// 現在グラフに表示している年・月（0=1月, 11=12月）
+let chartYear;
+let chartMonth;
+
+// 円グラフと凡例を組み立てて画面に表示する関数
+function renderExpenseChart(data) {
+  // 見出し（例: 2026年9月）を更新する
+  document.getElementById("chart-month-label").textContent =
+    chartYear + "年" + (chartMonth + 1) + "月";
+
+  // --- ① 選んだ月の支出を、カテゴリごとに集計する ---
+  const totalsByCategory = {}; // 例: { "食費": 12000, "家賃": 60000 }
+  let grandTotal = 0;
+
+  data.expenses.forEach(function (expense) {
+    const expenseDate = parseDateString(expense.date);
+
+    // 選んだ月ではない支出は、集計に含めない
+    if (expenseDate.getFullYear() !== chartYear || expenseDate.getMonth() !== chartMonth) {
+      return;
+    }
+
+    if (totalsByCategory[expense.categoryMain] === undefined) {
+      totalsByCategory[expense.categoryMain] = 0;
+    }
+    totalsByCategory[expense.categoryMain] += expense.amount;
+    grandTotal += expense.amount;
+  });
+
+  const pieElement = document.getElementById("chart-pie");
+  const emptyMessageElement = document.getElementById("chart-empty-message");
+  const totalLineElement = document.getElementById("chart-total-line");
+  const legendElement = document.getElementById("chart-legend");
+
+  legendElement.innerHTML = "";
+
+  // --- ② 支出が1件も無い月は、メッセージだけ表示して終了する ---
+  if (grandTotal === 0) {
+    emptyMessageElement.style.display = "block";
+    pieElement.style.display = "none";
+    totalLineElement.style.display = "none";
+    return;
+  }
+
+  emptyMessageElement.style.display = "none";
+  pieElement.style.display = "block";
+  totalLineElement.style.display = "block";
+
+  // --- ③ 金額が大きい順に並び替える ---
+  const items = Object.keys(totalsByCategory).map(function (categoryName) {
+    return { name: categoryName, amount: totalsByCategory[categoryName] };
+  });
+  items.sort(function (a, b) {
+    return b.amount - a.amount;
+  });
+
+  // --- ④ 円グラフの色の指定と、凡例の一覧を作る ---
+  // conic-gradientには「色 開始位置% 終了位置%」を順番に並べて渡す
+  // 例: "#4E79A7 0% 40%, #F28E2B 40% 100%"
+  const gradientParts = [];
+  let currentPercent = 0;
+
+  items.forEach(function (item, index) {
+    const color = CHART_COLORS[index % CHART_COLORS.length]; // 色が足りなくなったら最初に戻る
+    const sharePercent = item.amount / grandTotal * 100;
+
+    const startPercent = currentPercent;
+    const endPercent = currentPercent + sharePercent;
+    gradientParts.push(color + " " + startPercent + "% " + endPercent + "%");
+    currentPercent = endPercent;
+
+    // 凡例の1行を作る
+    const itemElement = document.createElement("li");
+
+    const colorElement = document.createElement("span");
+    colorElement.className = "chart-legend-color";
+    colorElement.style.backgroundColor = color;
+    itemElement.appendChild(colorElement);
+
+    const nameElement = document.createElement("span");
+    nameElement.className = "chart-legend-name";
+    nameElement.textContent = item.name;
+    itemElement.appendChild(nameElement);
+
+    // 割合は小数第1位まで表示する（例: 33.3%）
+    const displayPercent = Math.round(sharePercent * 10) / 10;
+    const valueElement = document.createElement("span");
+    valueElement.className = "chart-legend-value";
+    valueElement.textContent = item.amount.toLocaleString() + "円（" + displayPercent + "%）";
+    itemElement.appendChild(valueElement);
+
+    legendElement.appendChild(itemElement);
+  });
+
+  pieElement.style.background = "conic-gradient(" + gradientParts.join(", ") + ")";
+  document.getElementById("chart-total-display").textContent = grandTotal.toLocaleString() + "円";
+}
+
+// ============================================================
 // 【確定支出関連】
 // ============================================================
 
@@ -2002,6 +2119,31 @@ window.onload = function () {
   const recurringTypeSelect = document.getElementById("recurring-type-select");
   recurringTypeSelect.addEventListener("change", function () {
     applyRecurringTypeToForm(recurringTypeSelect.value);
+  });
+
+  // --- 月別グラフの初期化（最初は「今日を含む月」を表示する） ---
+  const todayForChart = new Date();
+  chartYear = todayForChart.getFullYear();
+  chartMonth = todayForChart.getMonth();
+
+  // 「＜」ボタン：前の月のグラフを表示する
+  document.getElementById("chart-prev-month-button").addEventListener("click", function () {
+    chartMonth -= 1;
+    if (chartMonth < 0) {
+      chartMonth = 11;
+      chartYear -= 1;
+    }
+    renderExpenseChart(loadData());
+  });
+
+  // 「＞」ボタン：次の月のグラフを表示する
+  document.getElementById("chart-next-month-button").addEventListener("click", function () {
+    chartMonth += 1;
+    if (chartMonth > 11) {
+      chartMonth = 0;
+      chartYear += 1;
+    }
+    renderExpenseChart(loadData());
   });
 
   // --- 履歴カレンダーの初期化（最初は「今日を含む月」を表示する） ---

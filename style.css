@@ -837,3 +837,80 @@ select {
   cursor: pointer;
   margin-top: 5px;
 }
+
+/* ============================================================ */
+/* 🥧 月別グラフ画面 */
+/* ============================================================ */
+
+#chart-section {
+  margin-top: 20px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 月の切り替えヘッダー */
+#chart-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+#chart-month-label {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+#chart-prev-month-button,
+#chart-next-month-button {
+  cursor: pointer;
+  padding: 3px 10px;
+}
+
+/* 円グラフ本体。border-radius: 50% で四角を丸にしている。色はJSがbackgroundに設定する */
+#chart-pie {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  margin: 20px auto;
+}
+
+#chart-total-line {
+  font-weight: bold;
+}
+
+/* 凡例（カテゴリ名・金額・割合の一覧） */
+#chart-legend {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+  text-align: left;
+}
+
+#chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 15px;
+}
+
+/* 凡例の色見本（小さい四角） */
+.chart-legend-color {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0; /* 名前が長くても、色見本がつぶれないようにする */
+}
+
+.chart-legend-name {
+  flex: 1;
+}
+
+.chart-legend-value {
+  text-align: right;
+}
