@@ -2244,7 +2244,7 @@ window.onload = function () {
 
   // 「＞」ボタン：次の月のグラフを表示する
   document.getElementById("chart-next-month-button").addEventListener("click", function () {
-    chartMonth += 1;ｘ
+    chartMonth += 1;
     if (chartMonth > 11) {
       chartMonth = 0;
       chartYear += 1;
