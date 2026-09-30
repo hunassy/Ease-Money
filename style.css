@@ -341,11 +341,21 @@ body {
   line-height: 1.2;
 }
 
-/* 今月の支出合計 */
+/* 今月の支出・収入の合計（月の切り替えヘッダーの下に、横一列で表示する） */
 #month-summary {
-  margin-top: 15px;
+  display: flex;             /* 中の<p>を横並びにする */
+  justify-content: center;   /* 中央に寄せる */
+  flex-wrap: wrap;           /* 画面が極端に狭いときだけ、自動で2段に折り返す */
+  gap: 4px 16px;             /* 縦4px・横16pxの間隔 */
+  margin-top: 10px;
   font-weight: bold;
+  font-size: 16px;           /* 2つ並べても収まるよう、少し小さくする */
   text-align: center;
+}
+
+/* <p>の初期の上下余白を消して、横に並んだときに高さがズレないようにする */
+#month-summary p {
+  margin: 0;
 }
 
 /* 日付タップ時の詳細表示エリア */

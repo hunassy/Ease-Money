@@ -256,14 +256,14 @@
         <button id="next-month-button">＞</button>
       </div>
 
-      <!-- カレンダー本体はscript.jsで組み立てる -->
-      <div id="calendar-grid"></div>
-
       <!-- 今月の支出・収入の合計 -->
       <div id="month-summary">
-        <p>今月の支出合計：<span id="month-total-display">-</span></p>
-        <p>今月の収入合計：<span id="month-income-total-display">-</span></p>
+        <p>支出合計：<span id="month-total-display">-</span></p>
+        <p>収入合計：<span id="month-income-total-display">-</span></p>
       </div>
+
+      <!-- カレンダー本体はscript.jsで組み立てる -->
+      <div id="calendar-grid"></div>
 
       <!-- 日付をタップすると、その日の支出・収入の詳細がここに表示される -->
       <!-- ポップアップの背景（クリックすると閉じる） -->
@@ -378,7 +378,7 @@
     </section>
 
   </div>
-  
+
   <!-- ============================================================ -->
   <!-- 🔰 初期設定・収入日当日画面 -->
   <!-- 「残高が未登録（初めて使うとき）」または「次回収入日が今日以前 -->
