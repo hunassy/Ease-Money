@@ -924,3 +924,74 @@ select {
 .chart-legend-value {
   text-align: right;
 }
+
+/* ============================================================ */
+/* 🔁 確定支出の管理画面（一覧画面） */
+/* ============================================================ */
+
+#recurring-list-section {
+  margin-top: 20px;
+  text-align: left;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 分割前は #recurring-section の中にあったので、そのときと同じ余白を保つ */
+#recurring-list-section div {
+  margin-bottom: 10px;
+}
+
+/* 登録ボタンを右寄せにする（ワイヤーフレームに合わせる） */
+#recurring-open-form-row {
+  text-align: right;
+  margin-top: 20px;
+}
+
+#open-recurring-form-button {
+  font-size: 16px;
+  padding: 8px 15px;
+  cursor: pointer;
+}
+
+/* ============================================================ */
+/* 🔁 確定支出の管理画面：見出し行（見出し・編集/削除ボタン・線） */
+/* ============================================================ */
+
+#recurring-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #333333; /* 見出しの下の線。太さ・色はここで変えられる */
+}
+
+/* 見出しの初期の上下余白を消して、ボタンと高さをそろえる */
+#recurring-list-header h2 {
+  margin: 0;
+}
+
+/* 「#recurring-list-section div」の余白指定がここにも効いてしまうため、打ち消す */
+#recurring-list-section #recurring-toggle-buttons {
+  margin-bottom: 0;
+}
+
+#recurring-toggle-buttons button {
+  font-size: 13px;
+  padding: 3px 10px;
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+/* ボタンの高さを固定する */
+.recurring-edit-button,
+.recurring-delete-button {
+  height: 28px;
+}
+
+/* 行の最低の高さを、ボタン（28px）より大きく固定する。
+   ボタンがあってもなくても、行の高さが同じになる */
+#recurring-list li,
+#estimated-list li {
+  min-height: 32px;
+}

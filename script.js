@@ -31,7 +31,13 @@ function showScreen(screenName) {
   // 確定支出・予想支出の画面に切り替わるときは、直近の実績を反映した平均額を計算し直す
   // （他の画面で支出を登録していても、この画面を開けば必ず最新の状態になるようにするため）
   if (screenName === "recurring") {
-    renderEstimatedList(loadData());
+    // 一覧画面を開くたびに、編集・削除ボタンは非表示の状態に戻す（誤タップ防止）
+    recurringEditMode = false;
+    recurringDeleteMode = false;
+
+    const latestRecurringData = loadData();
+    renderRecurringList(latestRecurringData);
+    renderEstimatedList(latestRecurringData);
   }
 
   // 月別グラフ画面に切り替わるときは、最新の支出データでグラフを描き直す
@@ -1452,6 +1458,10 @@ let editingRecurringId = null;
 
 // 現在編集中の予想支出のID番号。編集していないときは null
 let editingEstimatedId = null;
+// 確定支出の管理画面：一覧の各行に「編集」「削除」ボタンを表示するかどうかの状態
+// （通常は非表示にしておき、見出し行のボタンを押したときだけ表示する）
+let recurringEditMode = false;
+let recurringDeleteMode = false;
 
 // 指定した確定支出のデータを、確定支出フォームに読み込んで「編集モード」にする関数
 function startEditingRecurringExpense(recurringId) {
@@ -1470,7 +1480,7 @@ function startEditingRecurringExpense(recurringId) {
 
   // 先に画面を切り替えてから、フォームに値をセットする
   // （支出編集のときと同じく、iPhoneでの画面切り替え不具合を避けるため）
-  showScreen("recurring");
+  showScreen("recurring-form");
 
   // フォームを「確定支出」用の見た目に切り替える
   document.getElementById("recurring-type-select").value = "fixed";
@@ -1501,7 +1511,7 @@ function startEditingEstimatedExpense(estimatedId) {
   editingEstimatedId = estimatedId;
   editingRecurringId = null; // 確定支出側の編集モードは解除しておく
 
-  showScreen("recurring");
+  showScreen("recurring-form");
 
   // フォームを「予想支出」用の見た目に切り替える
   document.getElementById("recurring-type-select").value = "estimated";
@@ -1593,7 +1603,14 @@ function cancelEditingRecurringExpense() {
   document.getElementById("recurring-cycle-select").value = "1";
 
   document.getElementById("save-recurring-button").textContent = "確定支出を登録";
-  document.getElementById("cancel-recurring-edit-button").style.display = "none";
+}
+
+// 登録画面を閉じて、一覧画面（確定支出の管理）に戻る関数
+// フォームを初期状態に戻してから画面を切り替える
+// （登録・更新・キャンセルのあとは、必ず一覧に戻るので、まとめて1つの関数にしている）
+function closeRecurringForm() {
+  cancelEditingRecurringExpense();
+  showScreen("recurring");
 }
 
 // 指定した年月の最終日を求める関数（例: 2026年2月 → 28）
@@ -1763,21 +1780,27 @@ function renderRecurringList(data) {
       textElement.textContent = text;
       itemElement.appendChild(textElement);
 
-      const editButton = document.createElement("button");
-      editButton.textContent = "編集";
-      editButton.className = "recurring-edit-button";
-      editButton.addEventListener("click", function () {
-        startEditingRecurringExpense(recurring.id);
-      });
-      itemElement.appendChild(editButton);
+      // 「編集」ボタンを押して編集モードのときだけ、編集ボタンを表示する
+      if (recurringEditMode) {
+        const editButton = document.createElement("button");
+        editButton.textContent = "編集";
+        editButton.className = "recurring-edit-button";
+        editButton.addEventListener("click", function () {
+          startEditingRecurringExpense(recurring.id);
+        });
+        itemElement.appendChild(editButton);
+      }
 
-      const deleteButton = document.createElement("button");
-      deleteButton.textContent = "削除";
-      deleteButton.className = "recurring-delete-button";
-      deleteButton.addEventListener("click", function () {
-        deleteRecurringExpense(recurring.id);
-      });
-      itemElement.appendChild(deleteButton);
+      // 「削除」ボタンを押して削除モードのときだけ、削除ボタンを表示する
+      if (recurringDeleteMode) {
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "削除";
+        deleteButton.className = "recurring-delete-button";
+        deleteButton.addEventListener("click", function () {
+          deleteRecurringExpense(recurring.id);
+        });
+        itemElement.appendChild(deleteButton);
+      }
 
       listElement.appendChild(itemElement);
     });
@@ -1823,23 +1846,30 @@ function renderEstimatedList(data) {
       }
     }
 
-    const editButton = document.createElement("button");
-    editButton.textContent = "編集";
-    editButton.className = "recurring-edit-button";
-    editButton.addEventListener("click", function () {
-      startEditingEstimatedExpense(estimated.id);
-    });
-
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "削除";
-    deleteButton.className = "recurring-delete-button";
-    deleteButton.addEventListener("click", function () {
-      deleteEstimatedExpense(estimated.id);
-    });
-
     itemElement.appendChild(contentElement);
-    itemElement.appendChild(editButton);
-    itemElement.appendChild(deleteButton);
+
+    // 「編集」ボタンを押して編集モードのときだけ、編集ボタンを表示する
+    if (recurringEditMode) {
+      const editButton = document.createElement("button");
+      editButton.textContent = "編集";
+      editButton.className = "recurring-edit-button";
+      editButton.addEventListener("click", function () {
+        startEditingEstimatedExpense(estimated.id);
+      });
+      itemElement.appendChild(editButton);
+    }
+
+    // 「削除」ボタンを押して削除モードのときだけ、削除ボタンを表示する
+    if (recurringDeleteMode) {
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "削除";
+      deleteButton.className = "recurring-delete-button";
+      deleteButton.addEventListener("click", function () {
+        deleteEstimatedExpense(estimated.id);
+      });
+      itemElement.appendChild(deleteButton);
+    }
+
     listElement.appendChild(itemElement);
   });
 }
@@ -1907,7 +1937,7 @@ function saveFixedRecurringExpenseForm() {
     updateEstimatedReviewNotice(latestData);
 
     alert("確定支出を登録しました");
-    cancelEditingRecurringExpense();
+    closeRecurringForm();
 
   } else {
 
@@ -1918,7 +1948,7 @@ function saveFixedRecurringExpenseForm() {
 
     if (targetIndex === -1) {
       alert("編集対象の確定支出が見つかりませんでした");
-      cancelEditingRecurringExpense();
+      closeRecurringForm();
       return;
     }
 
@@ -1942,7 +1972,7 @@ function saveFixedRecurringExpenseForm() {
     updateEstimatedReviewNotice(latestData);
 
     alert("確定支出を更新しました");
-    cancelEditingRecurringExpense();
+    closeRecurringForm();
   }
 }
 
@@ -1996,7 +2026,7 @@ function saveEstimatedExpenseForm() {
     updateEstimatedReviewNotice(latestData);
 
     alert("予想支出を登録しました");
-    cancelEditingRecurringExpense();
+    closeRecurringForm();
 
   } else {
 
@@ -2007,7 +2037,7 @@ function saveEstimatedExpenseForm() {
 
     if (targetIndex === -1) {
       alert("編集対象の予想支出が見つかりませんでした");
-      cancelEditingRecurringExpense();
+      closeRecurringForm();
       return;
     }
 
@@ -2024,7 +2054,7 @@ function saveEstimatedExpenseForm() {
     updateEstimatedReviewNotice(latestData);
 
     alert("予想支出を更新しました");
-    cancelEditingRecurringExpense();
+    closeRecurringForm();
   }
 }
 
@@ -2631,10 +2661,34 @@ window.onload = function () {
     }
   });
 
-    // --- 「キャンセル」ボタンが押されたときの処理を登録する（確定支出の編集モードの中断） ---
+  // --- 「確定支出・予想支出の登録」ボタンが押されたときの処理を登録する ---
+  // 前回の編集内容などが残っていても、必ず新規登録用の初期状態にしてから登録画面を開く
+  const openRecurringFormButton = document.getElementById("open-recurring-form-button");
+  openRecurringFormButton.addEventListener("click", function () {
+    cancelEditingRecurringExpense();
+    showScreen("recurring-form");
+  });
+
+  // --- 確定支出の管理画面：見出し行の「編集」「削除」切り替えボタンの処理を登録する ---
+  // 押すたびにモードを反転させて、確定支出・予想支出の両方の一覧を描き直す
+  document.getElementById("recurring-edit-toggle-button").addEventListener("click", function () {
+    recurringEditMode = !recurringEditMode;
+    const latestData = loadData();
+    renderRecurringList(latestData);
+    renderEstimatedList(latestData);
+  });
+
+  document.getElementById("recurring-delete-toggle-button").addEventListener("click", function () {
+    recurringDeleteMode = !recurringDeleteMode;
+    const latestData = loadData();
+    renderRecurringList(latestData);
+    renderEstimatedList(latestData);
+  });
+
+  // --- 「キャンセル」ボタンが押されたときの処理を登録する（確定支出の編集モードの中断） ---
   const cancelRecurringEditButton = document.getElementById("cancel-recurring-edit-button");
   cancelRecurringEditButton.addEventListener("click", function () {
-    cancelEditingRecurringExpense();
+    closeRecurringForm();
   });
 
   // --- 「初期設定・収入日当日画面」の「登録」ボタンが押されたときの処理を登録する ---

@@ -182,61 +182,84 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- 🔁 確定支出画面 -->
+  <!-- 🔁 確定支出の管理画面（登録済みの一覧を見る画面） -->
   <!-- ============================================================ -->
   <div id="screen-recurring" class="app-screen">
 
-  <!-- ここから「確定支出・予想支出を登録する」ためのエリア -->
-  <section id="recurring-section">
-    <h2>確定支出・予想支出</h2>
+    <section id="recurring-list-section">
+      <!-- 見出し行：左に見出し、右に「編集」「削除」の切り替えボタン。下に線を引く -->
+      <div id="recurring-list-header">
+        <h2>確定支出の管理</h2>
+        <div id="recurring-toggle-buttons">
+          <button id="recurring-edit-toggle-button">編集</button>
+          <button id="recurring-delete-toggle-button">削除</button>
+        </div>
+      </div>
 
-    <div>
-      <label for="recurring-type-select">種類：</label>
-      <select id="recurring-type-select">
-        <option value="fixed">金額が確定している（確定支出）</option>
-        <option value="estimated">金額が変動する（予想支出）</option>
-      </select>
-    </div>
+      <h3>登録済みの確定支出</h3>
+      <div id="recurring-list"></div>
 
-    <div id="recurring-name-row">
-      <label for="recurring-name-input">名称（任意）：</label>
-      <input type="text" id="recurring-name-input" placeholder="未入力ならカテゴリ名になります">
-    </div>
+      <h3>登録済みの予想支出</h3>
+      <ul id="estimated-list"></ul>
 
-    <div>
-      <label for="recurring-amount-input" id="recurring-amount-label">金額：</label>
-      <input type="number" id="recurring-amount-input" placeholder="金額を入力">
-    </div>
+      <!-- 登録画面を開くボタン。data-screen属性は付けない（フォームの初期化をしてから開くため、script.jsで処理する） -->
+      <div id="recurring-open-form-row">
+        <button id="open-recurring-form-button">確定支出・予想支出の登録</button>
+      </div>
+    </section>
 
-    <div id="recurring-day-row">
-      <label for="recurring-day-input">引き落とし日：</label>
-      <input type="number" id="recurring-day-input" min="1" max="31" placeholder="1〜31">
-    </div>
+  </div>
 
-    <div>
-      <label for="recurring-category">カテゴリ：</label>
-      <!-- 選択肢は「種類」に応じてscript.jsが自動的に作り直す -->
-      <select id="recurring-category"></select>
-    </div>
+  <!-- ============================================================ -->
+  <!-- 🔁 確定支出・予想支出の登録画面（新規登録・編集の共通フォーム） -->
+  <!-- ============================================================ -->
+  <div id="screen-recurring-form" class="app-screen">
 
-    <div id="recurring-cycle-row" style="display:none;">
-      <label for="recurring-cycle-select">支払いサイクル：</label>
-      <select id="recurring-cycle-select">
-        <option value="1">毎月</option>
-        <option value="2">2か月ごと</option>
-        <option value="3">3か月ごと</option>
-      </select>
-    </div>
+    <section id="recurring-section">
+      <h2>確定支出・予想支出の登録</h2>
 
-    <button id="save-recurring-button">確定支出を登録</button>
-    <button id="cancel-recurring-edit-button" style="display:none;">キャンセル</button>
+      <div>
+        <label for="recurring-type-select">種類：</label>
+        <select id="recurring-type-select">
+          <option value="fixed">金額が確定している（確定支出）</option>
+          <option value="estimated">金額が変動する（予想支出）</option>
+        </select>
+      </div>
 
-    <h3>登録済みの確定支出</h3>
-    <div id="recurring-list"></div>
+      <div id="recurring-name-row">
+        <label for="recurring-name-input">名称（任意）：</label>
+        <input type="text" id="recurring-name-input" placeholder="未入力ならカテゴリ名になります">
+      </div>
 
-    <h3>登録済みの予想支出</h3>
-    <ul id="estimated-list"></ul>
-  </section>
+      <div>
+        <label for="recurring-amount-input" id="recurring-amount-label">金額：</label>
+        <input type="number" id="recurring-amount-input" placeholder="金額を入力">
+      </div>
+
+      <div id="recurring-day-row">
+        <label for="recurring-day-input">引き落とし日：</label>
+        <input type="number" id="recurring-day-input" min="1" max="31" placeholder="1〜31">
+      </div>
+
+      <div>
+        <label for="recurring-category">カテゴリ：</label>
+        <!-- 選択肢は「種類」に応じてscript.jsが自動的に作り直す -->
+        <select id="recurring-category"></select>
+      </div>
+
+      <div id="recurring-cycle-row" style="display:none;">
+        <label for="recurring-cycle-select">支払いサイクル：</label>
+        <select id="recurring-cycle-select">
+          <option value="1">毎月</option>
+          <option value="2">2か月ごと</option>
+          <option value="3">3か月ごと</option>
+        </select>
+      </div>
+
+      <button id="save-recurring-button">確定支出を登録</button>
+      <!-- 新規登録の画面でも戻れるよう、キャンセルボタンは常に表示する（style="display:none;"を削除した） -->
+      <button id="cancel-recurring-edit-button">キャンセル</button>
+    </section>
 
   </div>
 
