@@ -995,3 +995,21 @@ select {
 #estimated-list li {
   min-height: 32px;
 }
+
+/* ============================================================ */
+/* 🥧 月別グラフ画面：凡例のタップと、内訳の行 */
+/* ============================================================ */
+
+/* カテゴリの行は、タップできることが分かるよう指マークにする */
+#chart-legend li {
+  cursor: pointer;
+}
+
+/* 内訳の行：カテゴリの行より小さく・字下げして、「中身」だと分かるようにする */
+#chart-legend li.chart-breakdown-row {
+  cursor: default;
+  font-size: 13px;
+  color: #555555;
+  background-color: #fafafa;
+  padding-left: 30px;
+}

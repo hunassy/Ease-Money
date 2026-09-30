@@ -43,6 +43,7 @@ function showScreen(screenName) {
   // 月別グラフ画面に切り替わるときは、最新の支出データでグラフを描き直す
   // （他の画面で支出を登録・編集していても、この画面を開けば必ず最新になるようにするため）
   if (screenName === "chart") {
+    chartExpandedCategory = null; // グラフ画面を開くたびに、内訳は閉じた状態に戻す
     renderExpenseChart(loadData());
   }
 
@@ -1355,6 +1356,9 @@ const CHART_COLORS = [
 let chartYear;
 let chartMonth;
 
+// 円グラフの凡例で、内訳を開いているカテゴリ名。どれも開いていないときは null
+let chartExpandedCategory = null;
+
 // 円グラフと凡例を組み立てて画面に表示する関数
 function renderExpenseChart(data) {
   // 見出し（例: 2026年9月）を更新する
@@ -1432,7 +1436,9 @@ function renderExpenseChart(data) {
 
     const nameElement = document.createElement("span");
     nameElement.className = "chart-legend-name";
-    nameElement.textContent = item.name;
+    // タップできることが分かるよう、開いていれば「▼」、閉じていれば「▶」を名前の前に付ける
+    const isExpanded = (chartExpandedCategory === item.name);
+    nameElement.textContent = (isExpanded ? "▼ " : "▶ ") + item.name;
     itemElement.appendChild(nameElement);
 
     // 割合は小数第1位まで表示する（例: 33.3%）
@@ -1442,11 +1448,80 @@ function renderExpenseChart(data) {
     valueElement.textContent = item.amount.toLocaleString() + "円（" + displayPercent + "%）";
     itemElement.appendChild(valueElement);
 
+    // 行をタップしたら、内訳の開閉を切り替える（同じ行なら閉じる／別の行なら、そちらに切り替える）
+    itemElement.addEventListener("click", function () {
+      if (chartExpandedCategory === item.name) {
+        chartExpandedCategory = null;
+      } else {
+        chartExpandedCategory = item.name;
+      }
+      renderExpenseChart(loadData());
+    });
+
     legendElement.appendChild(itemElement);
+
+    // このカテゴリが開いている場合は、直下に内訳の行を追加する
+    if (isExpanded) {
+      appendChartBreakdownRows(legendElement, data, item.name, item.amount);
+    }
   });
 
   pieElement.style.background = "conic-gradient(" + gradientParts.join(", ") + ")";
   document.getElementById("chart-total-display").textContent = grandTotal.toLocaleString() + "円";
+}
+
+// 円グラフの凡例で、指定したカテゴリの内訳（第二階層）の行を追加する関数
+// legendElement：凡例の<ul>／categoryName：開いたカテゴリ名／categoryTotal：そのカテゴリの合計金額
+function appendChartBreakdownRows(legendElement, data, categoryName, categoryTotal) {
+  // --- ① 選んだ月・選んだカテゴリの支出を、内訳ごとに集計する ---
+  const totalsBySub = {}; // 例: { "食料品": 8000, "外食": 4000 }
+
+  data.expenses.forEach(function (expense) {
+    if (expense.categoryMain !== categoryName) {
+      return;
+    }
+
+    const expenseDate = parseDateString(expense.date);
+    if (expenseDate.getFullYear() !== chartYear || expenseDate.getMonth() !== chartMonth) {
+      return;
+    }
+
+    // 内訳を選んでいない支出（categorySubが空）は、「内訳なし」としてまとめる
+    const subName = expense.categorySub ? expense.categorySub : "内訳なし";
+
+    if (totalsBySub[subName] === undefined) {
+      totalsBySub[subName] = 0;
+    }
+    totalsBySub[subName] += expense.amount;
+  });
+
+  // --- ② 金額が大きい順に並び替える ---
+  const subItems = Object.keys(totalsBySub).map(function (subName) {
+    return { name: subName, amount: totalsBySub[subName] };
+  });
+  subItems.sort(function (a, b) {
+    return b.amount - a.amount;
+  });
+
+  // --- ③ 内訳の行を作って、凡例の末尾に追加する ---
+  subItems.forEach(function (subItem) {
+    const rowElement = document.createElement("li");
+    rowElement.className = "chart-breakdown-row";
+
+    const nameElement = document.createElement("span");
+    nameElement.className = "chart-legend-name";
+    nameElement.textContent = subItem.name;
+    rowElement.appendChild(nameElement);
+
+    // 割合は「そのカテゴリの合計」に対する割合にしている
+    const subPercent = Math.round(subItem.amount / categoryTotal * 1000) / 10;
+    const valueElement = document.createElement("span");
+    valueElement.className = "chart-legend-value";
+    valueElement.textContent = subItem.amount.toLocaleString() + "円（" + subPercent + "%）";
+    rowElement.appendChild(valueElement);
+
+    legendElement.appendChild(rowElement);
+  });
 }
 
 // ============================================================
@@ -2163,16 +2238,18 @@ window.onload = function () {
       chartMonth = 11;
       chartYear -= 1;
     }
+    chartExpandedCategory = null; // 月を切り替えたら、開いていた内訳は閉じる
     renderExpenseChart(loadData());
   });
 
   // 「＞」ボタン：次の月のグラフを表示する
   document.getElementById("chart-next-month-button").addEventListener("click", function () {
-    chartMonth += 1;
+    chartMonth += 1;ｘ
     if (chartMonth > 11) {
       chartMonth = 0;
       chartYear += 1;
     }
+    chartExpandedCategory = null; // 月を切り替えたら、開いていた内訳は閉じる
     renderExpenseChart(loadData());
   });
 
