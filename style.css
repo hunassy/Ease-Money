@@ -81,32 +81,6 @@ body {
   color: #333333;
 }
 
-/* 残高登録エリア全体 */
-#balance-section {
-  margin-top: 20px;
-}
-
-/* 金額入力欄 */
-#balance-input {
-  font-size: 16px;
-  padding: 5px;
-  width: 150px;
-}
-
-/* 保存ボタン */
-#save-balance-button {
-  font-size: 16px;
-  padding: 5px 15px;
-  margin-left: 5px;
-  cursor: pointer;
-}
-
-/* 残高の表示部分（数字を強調） */
-#balance-display {
-  font-weight: bold;
-  color: #333333;
-}
-
 /* 残高修正エリア（残高登録エリアの中の、小さなサブエリア） */
 #balance-adjustment-area {
   margin-top: 15px;
@@ -116,11 +90,6 @@ body {
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
-}
-
-#balance-adjustment-area h3 {
-  font-size: 15px;
-  margin-bottom: 4px;
 }
 
 #balance-adjustment-area p {
@@ -196,12 +165,6 @@ body {
   margin-bottom: 10px;
 }
 
-/* ラベルの幅を揃える */
-#expense-section label {
-  display: inline-block;
-  width: 100px;
-}
-
 /* 支出登録ボタン */
 #save-expense-button {
   font-size: 16px;
@@ -231,11 +194,6 @@ body {
 
 #income-entry-section div {
   margin-bottom: 10px;
-}
-
-#income-entry-section label {
-  display: inline-block;
-  width: 100px;
 }
 
 #save-income-entry-button {
@@ -366,23 +324,6 @@ body {
   border-radius: 6px;
 }
 
-#day-detail-list {
-  padding-left: 20px;
-}
-
-/* 詳細パネルの各項目（テキストとボタンを横並びにする） */
-#day-detail-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-#day-detail-list li span {
-  flex: 1;
-}
-
 .expense-edit-button,
 .expense-delete-button {
   font-size: 12px;
@@ -422,11 +363,6 @@ body {
 
 #recurring-section div {
   margin-bottom: 10px;
-}
-
-#recurring-section label {
-  display: inline-block;
-  width: 100px;
 }
 
 #save-recurring-button {
