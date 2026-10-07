@@ -362,9 +362,29 @@
 
     <section id="balance-adjustment-area">
       <h2>残高を修正</h2>
-      <p>実際の残高とズレているときに、正しい金額に直せます。</p>
+      <p>実際の残高とズレているときに、正しい金額に直せます。財布・口座・その他に分けて入力すると、合計が新しい残高になります。</p>
 
-      <input type="number" id="balance-adjustment-input" placeholder="実際の残高を入力">
+      <!-- 現在残高と、前回の項目別の内訳（script.jsが中身を作る） -->
+      <div id="balance-items-summary"></div>
+
+      <div class="balance-item-row">
+        <label for="balance-item-wallet-input">財布：</label>
+        <input type="number" id="balance-item-wallet-input" placeholder="金額を入力">
+      </div>
+
+      <div class="balance-item-row">
+        <label for="balance-item-account-input">口座：</label>
+        <input type="number" id="balance-item-account-input" placeholder="金額を入力">
+      </div>
+
+      <div class="balance-item-row">
+        <label for="balance-item-other-input">その他：</label>
+        <input type="number" id="balance-item-other-input" placeholder="金額を入力">
+      </div>
+
+      <!-- 入力中の合計と、アプリ上の残高との差を表示する -->
+      <div id="balance-items-total-preview"></div>
+
       <button id="save-balance-adjustment-button">残高を修正</button>
 
       <h4>修正履歴</h4>

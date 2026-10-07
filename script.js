@@ -47,6 +47,13 @@ function showScreen(screenName) {
     renderExpenseChart(loadData());
   }
 
+  // 残高修正画面に切り替わるときは、最新の残高と前回の内訳を表示し直す
+  // （他の画面で支出・収入を登録していても、この画面を開けば必ず最新になるようにするため）
+  if (screenName === "balance-adjustment") {
+    renderBalanceItemsSummary(loadData());
+    updateBalanceItemsTotalPreview();
+  }
+
   // 画面を切り替えたら、開いていたメニューがあれば自動で閉じる
   document.getElementById("side-menu").classList.remove("side-menu-open");
   document.getElementById("side-menu-backdrop").style.display = "none";
@@ -323,6 +330,95 @@ function formatDateJapanese(dateString) {
   return year + "年" + month + "月" + day + "日";
 }
 
+// 項目別の金額（財布・口座・その他）を「財布 1,000円／口座 2,000円／その他 0円」という文字にする関数
+// 履歴の表示と、前回の内訳の表示の2か所で使う
+function formatBalanceItemsText(items) {
+  return "財布 " + items.wallet.toLocaleString() + "円／" +
+         "口座 " + items.account.toLocaleString() + "円／" +
+         "その他 " + items.other.toLocaleString() + "円";
+}
+
+
+// 残高修正の入力欄から金額を読み取る関数
+// 空欄は 0 として扱う（例：「その他」は使っていないので空欄のまま、ができるようにするため）
+function readBalanceItemAmount(inputElement) {
+  if (inputElement.value === "") {
+    return 0;
+  }
+  return Number(inputElement.value);
+}
+
+
+// 入力中の「合計」と「アプリ上の残高との差」を表示する関数
+function updateBalanceItemsTotalPreview() {
+  const previewElement = document.getElementById("balance-items-total-preview");
+
+  const walletInput = document.getElementById("balance-item-wallet-input");
+  const accountInput = document.getElementById("balance-item-account-input");
+  const otherInput = document.getElementById("balance-item-other-input");
+
+  // 3つとも空欄のときは、何も表示しない
+  if (walletInput.value === "" && accountInput.value === "" && otherInput.value === "") {
+    previewElement.textContent = "";
+    return;
+  }
+
+  const total = readBalanceItemAmount(walletInput) +
+                readBalanceItemAmount(accountInput) +
+                readBalanceItemAmount(otherInput);
+
+  let text = "合計：" + total.toLocaleString() + "円";
+
+  const data = loadData();
+  if (data.currentBalance !== null) {
+    const difference = total - data.currentBalance;
+    const sign = difference > 0 ? "+" : ""; // マイナスの場合は数字に「-」が自動で付く
+    text += "（アプリ上の残高との差：" + sign + difference.toLocaleString() + "円）";
+  }
+
+  previewElement.textContent = text;
+}
+
+
+// 残高修正画面の上部：「アプリ上の現在残高」と「前回の項目別の内訳」を表示する関数
+function renderBalanceItemsSummary(data) {
+  const summaryElement = document.getElementById("balance-items-summary");
+  summaryElement.innerHTML = "";
+
+  // 1行目：アプリ上の現在残高
+  const currentLine = document.createElement("div");
+  currentLine.textContent = data.currentBalance === null
+    ? "アプリ上の現在残高：未登録"
+    : "アプリ上の現在残高：" + data.currentBalance.toLocaleString() + "円";
+  summaryElement.appendChild(currentLine);
+
+  // 履歴を新しい順に見て、項目別の内訳（newItems）が入っている一番新しい修正を探す
+  let latestAdjustment = null;
+  for (let i = data.balanceAdjustments.length - 1; i >= 0; i--) {
+    if (data.balanceAdjustments[i].newItems !== undefined) {
+      latestAdjustment = data.balanceAdjustments[i];
+      break;
+    }
+  }
+
+  // 2行目：前回の内訳
+  const itemsLine = document.createElement("div");
+  if (latestAdjustment === null) {
+    itemsLine.textContent = "前回の内訳：まだありません";
+    summaryElement.appendChild(itemsLine);
+  } else {
+    itemsLine.textContent =
+      "前回の内訳（" + formatDateJapanese(latestAdjustment.date) + "の修正時）：" +
+      formatBalanceItemsText(latestAdjustment.newItems);
+    summaryElement.appendChild(itemsLine);
+
+    // 注意書き
+    const noteLine = document.createElement("div");
+    noteLine.className = "balance-adjustment-items";
+    noteLine.textContent = "※その日以降の支出・収入は、この内訳には反映されていません";
+    summaryElement.appendChild(noteLine);
+  }
+}
 
 // 残高修正履歴の一覧を画面に表示する関数
 // 新しい修正が上に来るように、配列を逆順にしてから表示する
@@ -336,10 +432,24 @@ function renderBalanceAdjustmentList(data) {
 
   reversedList.forEach(function (adjustment) {
     const itemElement = document.createElement("li");
-    itemElement.textContent =
+
+    // 1行目：日付と、合計の変化
+    const mainLineElement = document.createElement("div");
+    mainLineElement.textContent =
       formatDateJapanese(adjustment.date) + "：" +
       adjustment.oldBalance.toLocaleString() + "円 → " +
       adjustment.newBalance.toLocaleString() + "円";
+    itemElement.appendChild(mainLineElement);
+
+    // 2行目：項目別の金額（項目別で修正したときの履歴だけに表示する）
+    // newItemsが無い古い履歴は、今まで通り1行だけの表示になる
+    if (adjustment.newItems !== undefined) {
+      const itemsLineElement = document.createElement("div");
+      itemsLineElement.className = "balance-adjustment-items";
+      itemsLineElement.textContent = formatBalanceItemsText(adjustment.newItems);
+      itemElement.appendChild(itemsLineElement);
+    }
+
     listElement.appendChild(itemElement);
   });
 }
@@ -2311,8 +2421,9 @@ window.onload = function () {
   const saveAdjustmentButton = document.getElementById("save-balance-adjustment-button");
 
   saveAdjustmentButton.addEventListener("click", function () {
-    const adjustmentInput = document.getElementById("balance-adjustment-input");
-    const inputValue = adjustmentInput.value;
+    const walletInput = document.getElementById("balance-item-wallet-input");
+    const accountInput = document.getElementById("balance-item-account-input");
+    const otherInput = document.getElementById("balance-item-other-input");
 
     const latestData = loadData();
 
@@ -2322,33 +2433,49 @@ window.onload = function () {
       return;
     }
 
-    // 入力チェック②：何も入力されていない場合は止める
-    if (inputValue === "") {
-      alert("実際の残高を入力してください");
+    // 入力チェック②：3つとも空欄の場合は止める（うっかり残高が0円になるのを防ぐ）
+    if (walletInput.value === "" && accountInput.value === "" && otherInput.value === "") {
+      alert("実際の金額を入力してください");
       return;
     }
 
-    const newBalance = Number(inputValue);
+    const walletAmount = readBalanceItemAmount(walletInput);
+    const accountAmount = readBalanceItemAmount(accountInput);
+    const otherAmount = readBalanceItemAmount(otherInput);
 
     // 入力チェック③：数値に変換できない場合は止める
-    if (Number.isNaN(newBalance)) {
+    if (Number.isNaN(walletAmount) || Number.isNaN(accountAmount) || Number.isNaN(otherAmount)) {
       alert("正しい金額を入力してください");
       return;
     }
 
+    // 入力チェック④：整数でない場合は止める（支出・収入と同じルール）
+    if (!Number.isInteger(walletAmount) || !Number.isInteger(accountAmount) || !Number.isInteger(otherAmount)) {
+      alert("金額は整数で入力してください");
+      return;
+    }
+
+    // 3つの合計が、新しい残高になる
+    const newBalance = walletAmount + accountAmount + otherAmount;
     const oldBalance = latestData.currentBalance;
 
     // 修正履歴を1件作って記録する（この履歴は後から編集・削除できないようにしている）
+    // newItemsに、そのときの項目別の金額を残す
     const newAdjustment = {
       id: latestData.nextBalanceAdjustmentId,
       date: getTodayDateString(),
       oldBalance: oldBalance,
-      newBalance: newBalance
+      newBalance: newBalance,
+      newItems: {
+        wallet: walletAmount,
+        account: accountAmount,
+        other: otherAmount
+      }
     };
     latestData.nextBalanceAdjustmentId += 1;
     latestData.balanceAdjustments.push(newAdjustment);
 
-    // 現在の残高を、実際の残高に置き換える（初期残高はここでは変更しない）
+    // 現在の残高を、実際の残高（3つの合計）に置き換える（初期残高はここでは変更しない）
     latestData.currentBalance = newBalance;
 
     saveData(latestData);
@@ -2379,10 +2506,17 @@ window.onload = function () {
     );
 
     // 入力欄を空にする
-    adjustmentInput.value = "";
+    walletInput.value = "";
+    accountInput.value = "";
+    otherInput.value = "";
 
     // 修正が終わったら、設計書の仕様に合わせてホーム画面に戻る
     showScreen("home");
+  });
+
+  // 入力のたびに、合計とズレを表示し直す
+  ["balance-item-wallet-input", "balance-item-account-input", "balance-item-other-input"].forEach(function (inputId) {
+    document.getElementById(inputId).addEventListener("input", updateBalanceItemsTotalPreview);
   });
 
   // --- 「次回収入日を保存」ボタンが押されたときの処理を登録する ---

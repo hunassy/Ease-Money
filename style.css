@@ -83,9 +83,7 @@ body {
 
 /* 残高修正エリア（残高登録エリアの中の、小さなサブエリア） */
 #balance-adjustment-area {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px dashed #cccccc;
+  margin-top: 20px; /* 他の画面（支出・収入など）と同じ上の余白にそろえる */
   text-align: left;
   max-width: 400px;
   margin-left: auto;
@@ -948,4 +946,42 @@ select {
   color: #555555;
   background-color: #fafafa;
   padding-left: 30px;
+}
+
+/* ============================================================ */
+/* 💴 残高修正画面：項目別（財布・口座・その他）の入力と内訳表示 */
+/* ============================================================ */
+
+/* 現在残高・前回の内訳を表示する箱 */
+#balance-items-summary {
+  font-size: 13px;
+  margin: 10px 0;
+  padding: 8px;
+  background-color: #ffffff;
+  border-radius: 6px;
+}
+
+#balance-items-summary div {
+  margin-bottom: 4px;
+}
+
+.balance-item-row {
+  margin-bottom: 10px;
+}
+
+.balance-item-row label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* 入力中の合計とズレの表示 */
+#balance-items-total-preview {
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+/* 修正履歴の2行目（項目別の金額）は小さめ・控えめな色にする */
+.balance-adjustment-items {
+  font-size: 12px;
+  color: #777777;
 }
