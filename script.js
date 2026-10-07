@@ -2299,7 +2299,7 @@ function deleteRecurringExpense(recurringId) {
 window.onload = function () {
 
   // --- STEP1で作った動作確認メッセージ ---
-  document.getElementById("status-message").textContent = "✅ 正常に動いています！";
+  //document.getElementById("status-message").textContent = "✅ 正常に動いています！";
 
   // --- 保存されているデータを読み込んで、画面に反映する ---
   const data = loadData();
