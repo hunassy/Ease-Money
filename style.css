@@ -1010,3 +1010,29 @@ select {
 #save-balance-adjustment-button {
   padding: 12px 20px;
 }
+
+/* ============================================================ */
+/* 編集・削除・登録ボタンを大きくする */
+/* ============================================================ */
+
+/* 見出し行のボタン（定期支出の管理：登録・編集・削除／履歴ポップアップ：編集・削除） */
+/* ※定期支出の管理は3つ並ぶので、横の余白は小さめにして1行に収まるようにしている */
+#recurring-toggle-buttons button,
+#day-detail-toggle-buttons button {
+  font-size: 14px;
+  padding: 11px 10px;
+  margin-left: 4px;
+}
+
+/* 一覧の各行にある「編集」「削除」ボタン（定期支出・予想支出・履歴の支出と収入） */
+/* ※定期支出側は元々height: 28pxで固定されていたので、ここでheightも指定して上書きしている */
+.recurring-edit-button,
+.recurring-delete-button,
+.expense-edit-button,
+.expense-delete-button,
+.income-edit-button,
+.income-delete-button {
+  height: 40px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
