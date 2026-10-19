@@ -985,3 +985,28 @@ select {
   font-size: 12px;
   color: #777777;
 }
+
+/* ============================================================ */
+/* タップしやすさの調整（ボタンを大きくする・登録ボタンの下に余白を作る） */
+/* ============================================================ */
+
+/* 確定支出の管理画面：登録ボタンが画面の下端に張り付いて押しにくいので、下に余白を作る */
+#recurring-open-form-row {
+  padding-bottom: 40px;
+}
+
+/* 主なボタンを、指でタップしやすい大きさ（高さ約44px）にする */
+/* ※ファイルの上の方にある各ボタンのpaddingより、後ろに書いているのでこちらが優先される */
+/* ※元の指定は消していないので、大きさを戻したいときはこのブロックごと消せばよい */
+#save-expense-button,
+#cancel-edit-button,
+#save-income-entry-button,
+#cancel-income-edit-button,
+#save-recurring-button,
+#cancel-recurring-edit-button,
+#open-recurring-form-button,
+#setup-save-button,
+#save-income-date-button,
+#save-balance-adjustment-button {
+  padding: 12px 20px;
+}
