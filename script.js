@@ -58,15 +58,6 @@ function showScreen(screenName) {
   document.getElementById("side-menu").classList.remove("side-menu-open");
   document.getElementById("side-menu-backdrop").style.display = "none";
 
-  // 下部ナビゲーションバーのボタンも、今の画面に合わせて強調表示を切り替える
-  document.querySelectorAll("#app-nav .nav-button").forEach(function (button) {
-    if (button.dataset.screen === screenName) {
-      button.classList.add("nav-button-active");
-    } else {
-      button.classList.remove("nav-button-active");
-    }
-  });
-
   // 画面を切り替えたら、ページの一番上にスクロールし直す
   window.scrollTo(0, 0);
 
@@ -1797,8 +1788,6 @@ function closeRecurringForm() {
   cancelEditingRecurringExpense();
   showScreen("recurring");
 }
-
-// 指定した年月の最終日を求める関数（例: 2026年2月 → 28）
 
 // 指定した年月の最終日を求める関数（例: 2026年2月 → 28）
 function getLastDayOfMonth(year, month) {
