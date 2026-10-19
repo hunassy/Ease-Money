@@ -1,3 +1,9 @@
+/* 画面の端で引っ張ったときに、iPhone特有の弾む動き（バウンス）を止める */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 /* ページ全体の見た目 */
 body {
   font-family: sans-serif;
