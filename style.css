@@ -1,3 +1,15 @@
+/* ============================================================ */
+/* 🎨 色の一覧（デザイン用）                                      */
+/* 色を変えたいときは、ここの値を書き換えるだけでよい            */
+/* ============================================================ */
+:root {
+  --color-pink: #FFBFBF;   /* ヘッダー・ボタンのピンク */
+  --color-bg: #FFF8EC;     /* 画面全体の背景（うすいクリーム） */
+  --color-cream: #F9EED5;  /* カードの背景（クリーム） */
+  --color-green: #3E9A22;  /* 金額などの緑 */
+  --color-brown: #3A2620;  /* 文字・輪郭線の濃い茶色 */
+}
+
 /* 画面の端で引っ張ったときに、iPhone特有の弾む動き（バウンス）を止める */
 html,
 body {
@@ -1054,4 +1066,62 @@ select {
 
 #side-menu button {
   color: #333333;
+}
+
+/* ============================================================ */
+/* 🎨 配色の変更（クリーム×ピンク）                               */
+/* ※ファイルの一番最後に書いているので、上にある古い指定より優先される */
+/* ※元の指定は消していない。元に戻したいときは、このブロックごと消せばよい */
+/* ============================================================ */
+
+/* ページ全体：背景をクリーム、文字を茶色にする */
+body {
+  background-color: var(--color-bg);
+  color: var(--color-brown);
+}
+
+/* ヘッダー：ピンク＋下に茶色の線 */
+#app-header {
+  background-color: var(--color-pink);
+  border-bottom: 3px solid var(--color-brown);
+}
+
+/* ヘッダーのタイトルと☰ボタンの色 */
+#app-header #app-title,
+.icon-button {
+  color: var(--color-brown);
+}
+
+/* ホーム画面：生活費残高のカード（クリーム＋茶色の枠線＋丸い角） */
+#living-cost-balance-section {
+  background-color: var(--color-cream);
+  border: 3px solid var(--color-brown);
+  border-radius: 26px;
+  box-shadow: none;
+}
+
+/* 生活費残高の金額（緑） */
+#living-cost-balance-display {
+  color: var(--color-green);
+}
+
+/* カード内のその他の数字（茶色） */
+#living-cost-current-balance-display,
+#living-cost-days-until-income-display,
+#living-cost-recurring-display,
+#living-cost-estimated-display {
+  color: var(--color-brown);
+}
+
+/* ホーム画面：「収入の登録」「支出の登録」ボタン */
+.home-shortcut-button {
+  background-color: var(--color-pink);
+  color: var(--color-brown);
+  border: 3px solid var(--color-brown);
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.home-shortcut-button:hover {
+  background-color: #FFB0B0; /* 押したときに、ほんの少し濃くする */
 }
