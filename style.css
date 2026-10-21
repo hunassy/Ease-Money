@@ -1032,7 +1032,17 @@ select {
 .expense-delete-button,
 .income-edit-button,
 .income-delete-button {
-  height: 40px;
-  padding: 8px 12px;
+  height: 34px;
+  padding: 0 10px;
   font-size: 14px;
+}
+
+/* 行の最低の高さを、ボタンの高さ（34px）より少し大きくする */
+/* → ボタンが出ても出なくても行の高さが変わらないので、文字がずれない */
+/* ※ボタンの高さを変えたら、ここも「ボタンの高さ＋4px」にそろえる */
+#recurring-list li,
+#estimated-list li,
+#day-detail-expense-list li,
+#day-detail-income-list li {
+  min-height: 38px;
 }
