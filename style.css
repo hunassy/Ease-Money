@@ -8,6 +8,7 @@
   --color-cream: #F9EED5;  /* カードの背景（クリーム） */
   --color-green: #3E9A22;  /* 金額などの緑 */
   --color-brown: #3A2620;  /* 文字・輪郭線の濃い茶色 */
+  --color-cream-light: #FFFDF5; /* 入力欄などの明るいクリーム */
 }
 
 /* 画面の端で引っ張ったときに、iPhone特有の弾む動き（バウンス）を止める */
@@ -1124,4 +1125,53 @@ body {
 
 .home-shortcut-button:hover {
   background-color: #FFB0B0; /* 押したときに、ほんの少し濃くする */
+}
+
+/* ============================================================ */
+/* 🎨 配色の変更：入力画面（フォームのボタン・入力欄）            */
+/* ※元の指定は消していない。元に戻したいときは、このブロックごと消せばよい */
+/* ============================================================ */
+
+/* 入力欄・プルダウン：明るいクリーム＋茶色の枠線＋丸い角 */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+  background-color: var(--color-cream-light);
+  color: var(--color-brown);
+  border: 2px solid var(--color-brown);
+  border-radius: 14px;
+}
+
+/* 入力欄をタップしたとき：ピンクの太い枠で目立たせる */
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+select:focus {
+  outline: 3px solid var(--color-pink);
+}
+
+/* メインボタン（登録・更新・保存）：ホームのボタンと同じピンク */
+#save-expense-button,
+#save-income-entry-button,
+#save-recurring-button,
+#setup-save-button,
+#save-income-date-button,
+#save-balance-adjustment-button {
+  background-color: var(--color-pink);
+  color: var(--color-brown);
+  border: 3px solid var(--color-brown);
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+/* キャンセルボタン：クリーム背景で、メインボタンより控えめにする */
+#cancel-edit-button,
+#cancel-income-edit-button,
+#cancel-recurring-edit-button {
+  background-color: var(--color-cream-light);
+  color: var(--color-brown);
+  border: 3px solid var(--color-brown);
+  border-radius: 20px;
+  font-weight: bold;
 }
