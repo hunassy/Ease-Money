@@ -1286,3 +1286,56 @@ input[type="date"] {
 .income-edit-button {
   color: var(--color-brown);
 }
+
+/* ============================================================ */
+/* 🎨 配色の変更：月別グラフ画面                                  */
+/* ※元の指定は消していない。元に戻したいときは、このブロックごと消せばよい */
+/* ============================================================ */
+
+/* 月の切り替えボタン（＜ ＞） */
+#chart-prev-month-button,
+#chart-next-month-button {
+  background-color: var(--color-pink);
+  color: var(--color-brown);
+  border: 2px solid var(--color-brown);
+  border-radius: 14px;
+  font-weight: bold;
+  padding: 6px 16px;
+  min-height: 40px;
+}
+
+/* 円グラフ：茶色の太い枠線を付ける（扇形の色はscript.jsが決めている） */
+#chart-pie {
+  border: 3px solid var(--color-brown);
+}
+
+/* 合計の行：クリームのカード風にして、中央に置く */
+/* ※表示・非表示はscript.jsが切り替えているので、displayは指定しない */
+#chart-total-line {
+  width: fit-content;
+  margin: 12px auto;
+  background-color: var(--color-cream);
+  border: 2px solid var(--color-brown);
+  border-radius: 18px;
+  padding: 8px 18px;
+}
+
+/* 凡例の区切り線：実線から、やわらかい色の点線にする */
+#chart-legend li {
+  border-bottom: 2px dotted var(--color-line);
+}
+
+/* 凡例の色見本：茶色の枠線と、少し丸い角を付ける */
+.chart-legend-color {
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-brown);
+  border-radius: 6px;
+}
+
+/* 内訳の行：明るいクリーム背景、茶色の文字 */
+#chart-legend li.chart-breakdown-row {
+  background-color: var(--color-cream-light);
+  color: var(--color-brown);
+}
