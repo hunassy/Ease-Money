@@ -1286,6 +1286,10 @@ function calculateRecentAverages(data, categoryMain, categorySub) {
   return averages;
 }
 
+// 予想支出の「見込み金額」と「実績の平均」が、何%以上ズレたらホームでお知らせするか
+// 0.1 = 10%。お知らせが多すぎるときは大きく（例：0.2）、少なすぎるときは小さく（例：0.05）する
+const ESTIMATED_REVIEW_THRESHOLD_RATE = 0.1;
+
 // 予想支出について、実績の平均から見直した方がよいものが1つでもあるかどうかを調べて、
 // ホーム画面の小さなお知らせの表示/非表示を切り替える関数
 function updateEstimatedReviewNotice(data) {
@@ -1299,9 +1303,11 @@ function updateEstimatedReviewNotice(data) {
 
     const averages = calculateRecentAverages(data, matchInfo.categoryMain, matchInfo.categorySub);
 
-    // 計算できた平均のうち、1つでも今の見込み金額と違っていれば「見直しの余地あり」とする
+    // 計算できた平均のうち、1つでも今の見込み金額と一定割合以上ズレていれば「見直しの余地あり」とする
+    // （見込み金額は登録時に1円以上のチェックを通っているので、0で割ることはない）
     return Object.keys(averages).some(function (count) {
-      return averages[count] !== estimated.amount;
+      const differenceRate = Math.abs(averages[count] - estimated.amount) / estimated.amount;
+      return differenceRate >= ESTIMATED_REVIEW_THRESHOLD_RATE;
     });
   });
 
