@@ -9,6 +9,8 @@
   --color-green: #3E9A22;  /* 金額などの緑 */
   --color-brown: #3A2620;  /* 文字・輪郭線の濃い茶色 */
   --color-cream-light: #FFFDF5; /* 入力欄などの明るいクリーム */
+  --color-pink-light: #FFE6E6;  /* マスを押したときなどの、うすいピンク */
+  --color-line: #E3D3BC;        /* カレンダーのマスの枠線（やわらかい茶色） */
 }
 
 /* 画面の端で引っ張ったときに、iPhone特有の弾む動き（バウンス）を止める */
@@ -1188,4 +1190,99 @@ input[type="date"] {
   max-width: 100%;          /* 親の幅を超えないようにする */
   text-align: left;         /* 文字を左寄せにして、ほかの入力欄とそろえる */
   min-height: 40px;         /* 標準の見た目をやめても、高さがつぶれないようにする */
+}
+
+/* ============================================================ */
+/* 🎨 配色の変更：履歴画面（カレンダーとポップアップ）            */
+/* ※元の指定は消していない。元に戻したいときは、このブロックごと消せばよい */
+/* ============================================================ */
+
+/* 月の切り替えボタン（＜ ＞） */
+#prev-month-button,
+#next-month-button {
+  background-color: var(--color-pink);
+  color: var(--color-brown);
+  border: 2px solid var(--color-brown);
+  border-radius: 14px;
+  font-weight: bold;
+  padding: 6px 16px;
+  min-height: 40px;
+}
+
+/* 今月の支出・収入の合計：クリームのカード風にする */
+#month-summary {
+  background-color: var(--color-cream);
+  border: 2px solid var(--color-brown);
+  border-radius: 18px;
+  padding: 10px 16px;
+}
+
+/* カレンダーのマスの間隔を、少し広げる */
+#calendar-grid {
+  gap: 4px;
+}
+
+/* カレンダーのマス：明るいクリーム＋やわらかい枠線＋丸い角 */
+.calendar-day {
+  background-color: var(--color-cream-light);
+  border: 2px solid var(--color-line);
+  border-radius: 10px;
+}
+
+/* 押したとき（iPhoneでは、タップ後もしばらく残る）：うすいピンク */
+.calendar-day:hover {
+  background-color: var(--color-pink-light);
+}
+
+/* 月初めの空白マス：枠線・背景をなくす（上の指定で消えないよう、元の見た目に戻す） */
+.calendar-day-empty {
+  background-color: transparent;
+  border: none;
+}
+
+/* ポップアップの背景：真っ黒ではなく、少し茶色がかった暗さにする */
+#day-detail-backdrop {
+  background-color: rgba(58, 38, 32, 0.5);
+}
+
+/* ポップアップ本体：クリーム＋茶色の太い枠線＋大きな丸み */
+#day-detail-section {
+  background-color: var(--color-cream);
+  border: 3px solid var(--color-brown);
+  border-radius: 26px;
+  box-shadow: none;
+  padding: 14px 16px;
+}
+
+/* ポップアップの「✕」ボタン：灰色から茶色にして、押しやすくする */
+#day-detail-close-button {
+  color: var(--color-brown);
+  font-size: 24px;
+  padding: 0 8px;
+}
+
+/* ポップアップ上部の「編集」「削除」切り替えボタン：ピンク */
+#day-detail-toggle-buttons button {
+  background-color: var(--color-pink);
+  color: var(--color-brown);
+  border: 2px solid var(--color-brown);
+  border-radius: 14px;
+  font-weight: bold;
+}
+
+/* 各行の「編集」「削除」ボタン（支出・収入）：クリーム背景＋茶色の枠線 */
+.expense-edit-button,
+.expense-delete-button,
+.income-edit-button,
+.income-delete-button {
+  background-color: var(--color-cream-light);
+  border: 2px solid var(--color-brown);
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+/* 「編集」ボタンの文字は茶色（「削除」は、元の赤い文字のまま） */
+.expense-edit-button,
+.income-edit-button {
+  color: var(--color-brown);
 }
